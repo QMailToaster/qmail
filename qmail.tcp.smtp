@@ -1,0 +1,2 @@
+127.:allow,RELAYCLIENT="",DKSIGN="/var/qmail/control/domainkeys/%/private"
+:allow,BADMIMETYPE="",BADLOADERTYPE="M",CHKUSER_RCPTLIMIT="50",CHKUSER_WRONGRCPTLIMIT="10",DKSIGN="/var/qmail/control/domainkeys/%/private"

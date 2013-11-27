@@ -1,0 +1,114 @@
+diff -u qmail-1.03-orig/auto-gid.c qmail-1.03/auto-gid.c
+--- qmail-1.03-orig/auto-gid.c	1998-06-15 06:53:16.000000000 -0400
++++ qmail-1.03/auto-gid.c	2013-11-11 07:50:48.573252294 -0500
+@@ -22,6 +22,7 @@
+ {
+   char *name;
+   char *value;
++  char *id;
+   struct group *gr;
+   char strnum[FMT_ULONG];
+ 
+@@ -29,9 +30,11 @@
+   if (!name) _exit(100);
+   value = argv[2];
+   if (!value) _exit(100);
++  id = argv[3];
++  if (!id) _exit(100);
+ 
+-  gr = getgrnam(value);
+-  if (!gr) {
++  /*gr = getgrnam(value);*/
++  if (!id) {
+     substdio_puts(subfderr,"fatal: unable to find group ");
+     substdio_puts(subfderr,value);
+     substdio_puts(subfderr,"\n");
+@@ -39,12 +42,12 @@
+     _exit(111);
+   }
+ 
+-  strnum[fmt_ulong(strnum,(unsigned long) gr->gr_gid)] = 0;
++  /*strnum[fmt_ulong(strnum,(unsigned long) gr->gr_gid)] = 0;*/
+ 
+   outs("int ");
+   outs(name);
+   outs(" = ");
+-  outs(strnum);
++  outs(id);
+   outs(";\n");
+   if (substdio_flush(&ss1) == -1) _exit(111);
+   _exit(0);
+diff -u qmail-1.03-orig/auto-uid.c qmail-1.03/auto-uid.c
+--- qmail-1.03-orig/auto-uid.c	1998-06-15 06:53:16.000000000 -0400
++++ qmail-1.03/auto-uid.c	2013-11-11 07:50:04.353255683 -0500
+@@ -22,6 +22,7 @@
+ {
+   char *name;
+   char *value;
++  char *id;
+   struct passwd *pw;
+   char strnum[FMT_ULONG];
+ 
+@@ -29,9 +30,11 @@
+   if (!name) _exit(100);
+   value = argv[2];
+   if (!value) _exit(100);
++  id = argv[3];
++  if (!id) _exit(100);
+ 
+-  pw = getpwnam(value);
+-  if (!pw) {
++  /*pw = getpwnam(value);*/
++  if (!id) {
+     substdio_puts(subfderr,"fatal: unable to find user ");
+     substdio_puts(subfderr,value);
+     substdio_puts(subfderr,"\n");
+@@ -39,12 +42,12 @@
+     _exit(111);
+   }
+ 
+-  strnum[fmt_ulong(strnum,(unsigned long) pw->pw_uid)] = 0;
++  /*strnum[fmt_ulong(strnum,(unsigned long) pw->pw_uid)] = 0;*/
+ 
+   outs("int ");
+   outs(name);
+   outs(" = ");
+-  outs(strnum);
++  outs(id);
+   outs(";\n");
+   if (substdio_flush(&ss1) == -1) _exit(111);
+   _exit(0);
+diff -u qmail-1.03-orig/conf-groups qmail-1.03/conf-groups
+--- qmail-1.03-orig/conf-groups	1998-06-15 06:53:16.000000000 -0400
++++ qmail-1.03/conf-groups	2013-11-11 07:46:41.133263863 -0500
+@@ -1,5 +1,5 @@
+-qmail
+-nofiles
++qmail 2108
++nofiles 2107
+ 
+ These are the qmail groups. The second group should not have access to
+ any files, but it must be usable for processes; this requirement
+diff -u qmail-1.03-orig/conf-users qmail-1.03/conf-users
+--- qmail-1.03-orig/conf-users	1998-06-15 06:53:16.000000000 -0400
++++ qmail-1.03/conf-users	2013-11-11 07:46:31.663264264 -0500
+@@ -1,11 +1,11 @@
+-alias
+-qmaild
+-qmaill
+-root
+-qmailp
+-qmailq
+-qmailr
+-qmails
++alias 7790
++qmaild 7791
++qmaill 7792
++root 0
++qmailp 7793
++qmailq 7794
++qmailr 7795
++qmails 7796
+ 
+ The qmail system is heavily partitioned for security; it does almost
+ nothing as root.

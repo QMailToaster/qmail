@@ -1,0 +1,771 @@
+diff -Naur qmail-1.03.orig/condredirect.c qmail-1.03/condredirect.c
+--- qmail-1.03.orig/condredirect.c	1998-06-15 03:53:16.000000000 -0700
++++ qmail-1.03/condredirect.c	2007-01-12 22:42:00.000000000 -0800
+@@ -10,6 +10,8 @@
+ #include "strerr.h"
+ #include "substdio.h"
+ #include "fmt.h"
++#include "stralloc.h"
++#include "srs.h"
+ 
+ #define FATAL "condredirect: fatal: "
+ 
+@@ -68,6 +70,16 @@
+   dtline = env_get("DTLINE");
+   if (!dtline) strerr_die2x(100,FATAL,"DTLINE not set");
+  
++  if (str_len(sender)) {
++    switch(srsforward(sender)) {
++      case -3: strerr_die2x(100,FATAL,srs_error.s); break;
++      case -2: strerr_die2x(111,FATAL,"out of memory"); break;
++      case -1: strerr_die2x(111,FATAL,"unable to read controls"); break;
++      case 0: break; // nothing
++      case 1: sender = srs_result.s; break;
++    }
++  }
++ 
+   if (qmail_open(&qqt) == -1)
+     strerr_die2sys(111,FATAL,"unable to fork: ");
+   qmail_puts(&qqt,dtline);
+diff -Naur qmail-1.03.orig/forward.c qmail-1.03/forward.c
+--- qmail-1.03.orig/forward.c	1998-06-15 03:53:16.000000000 -0700
++++ qmail-1.03/forward.c	2007-01-12 22:42:00.000000000 -0800
+@@ -6,11 +6,11 @@
+ #include "strerr.h"
+ #include "substdio.h"
+ #include "fmt.h"
++#include "stralloc.h"
++#include "srs.h"
+ 
+ #define FATAL "forward: fatal: "
+ 
+-void die_nomem() { strerr_die2x(111,FATAL,"out of memory"); }
+-
+ struct qmail qqt;
+ 
+ int mywrite(fd,buf,len) int fd; char *buf; int len;
+@@ -42,6 +42,16 @@
+   dtline = env_get("DTLINE");
+   if (!dtline)
+     strerr_die2x(100,FATAL,"DTLINE not set");
++
++  if (str_len(sender)) {
++    switch(srsforward(sender)) {
++      case -3: strerr_die2x(100,FATAL,srs_error.s); break;
++      case -2: strerr_die2x(111,FATAL,"out of memory"); break;
++      case -1: strerr_die2x(111,FATAL,"unable to read controls"); break;
++      case 0: break; // nothing
++      case 1: sender = srs_result.s; break;
++    }
++  }
+  
+   if (qmail_open(&qqt) == -1)
+     strerr_die2sys(111,FATAL,"unable to fork: ");
+diff -Naur qmail-1.03.orig/hier.c qmail-1.03/hier.c
+--- qmail-1.03.orig/hier.c	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/hier.c	2007-01-12 22:42:00.000000000 -0800
+@@ -133,6 +133,7 @@
+   c(auto_qmail,"bin","qmail-qmqpd",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","qmail-qmtpd",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","qmail-smtpd",auto_uido,auto_gidq,0755);
++  c(auto_qmail,"bin","srsfilter",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","sendmail",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","tcp-env",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","qreceipt",auto_uido,auto_gidq,0755);
+diff -Naur qmail-1.03.orig/install-big.c qmail-1.03/install-big.c
+--- qmail-1.03.orig/install-big.c	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/install-big.c	2007-01-12 22:42:00.000000000 -0800
+@@ -139,6 +139,7 @@
+   c(auto_qmail,"bin","qsmhook",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","qbiff",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","forward",auto_uido,auto_gidq,0755);
++  c(auto_qmail,"bin","srsfilter",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","preline",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","condredirect",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","bouncesaying",auto_uido,auto_gidq,0755);
+diff -Naur qmail-1.03.orig/Makefile qmail-1.03/Makefile
+--- qmail-1.03.orig/Makefile	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/Makefile	2007-01-12 22:51:03.000000000 -0800
+@@ -345,10 +345,12 @@
+ 	chmod 755 compile
+ 
+ condredirect: \
+-load condredirect.o qmail.o strerr.a fd.a sig.a wait.a seek.a env.a \
+-substdio.a error.a str.a fs.a auto_qmail.o
+-	./load condredirect qmail.o strerr.a fd.a sig.a wait.a \
+-	seek.a env.a substdio.a error.a str.a fs.a auto_qmail.o 
++load condredirect.o srs.o rcpthosts.o cdb.a control.o constmap.o case.a \
++	getln.a stralloc.a alloc.a open.a qmail.o strerr.a fd.a sig.a \
++	wait.a seek.a env.a substdio.a error.a str.a fs.a auto_qmail.o
++	./load condredirect srs.o rcpthosts.o cdb.a control.o constmap.o \
++	case.a getln.a stralloc.a alloc.a open.a qmail.o strerr.a fd.a sig.a \
++	wait.a seek.a env.a substdio.a error.a str.a fs.a auto_qmail.o -lsrs2
+ 
+ condredirect.0: \
+ condredirect.1
+@@ -356,7 +358,7 @@
+ 
+ condredirect.o: \
+ compile condredirect.c sig.h readwrite.h exit.h env.h error.h fork.h \
+-wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h
++wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h stralloc.h srs.h
+ 	./compile condredirect.c
+ 
+ config: \
+@@ -630,10 +632,12 @@
+ 	rm -f tryvfork.o tryvfork
+ 
+ forward: \
+-load forward.o qmail.o strerr.a alloc.a fd.a wait.a sig.a env.a \
+-substdio.a error.a str.a fs.a auto_qmail.o
+-	./load forward qmail.o strerr.a alloc.a fd.a wait.a sig.a \
+-	env.a substdio.a error.a str.a fs.a auto_qmail.o 
++load forward.o srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
++	cdb.a case.a open.a stralloc.a alloc.a getln.a \
++	fd.a wait.a sig.a env.a substdio.a error.a str.a fs.a auto_qmail.o
++	./load forward srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
++	cdb.a case.a open.a stralloc.a alloc.a getln.a \
++	fd.a wait.a sig.a env.a substdio.a error.a str.a fs.a auto_qmail.o -lsrs2
+ 
+ forward.0: \
+ forward.1
+@@ -641,7 +645,7 @@
+ 
+ forward.o: \
+ compile forward.c sig.h readwrite.h exit.h env.h qmail.h substdio.h \
+-strerr.h substdio.h fmt.h
++strerr.h substdio.h fmt.h stralloc.h srs.h
+ 	./compile forward.c
+ 
+ fs.a: \
+@@ -846,7 +850,7 @@
+ forward preline condredirect bouncesaying except maildirmake \
+ maildir2mbox maildirwatch qail elq pinq idedit install-big install \
+ instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
+-binm3 binm3+df spfquery qmail-dk update_tmprsadh
++binm3 binm3+df spfquery qmail-dk update_tmprsadh srsfilter
+ 
+ load: \
+ make-load warn-auto.sh systype
+@@ -1230,15 +1234,15 @@
+ 	nroff -man qmail-header.5 > qmail-header.0
+ 
+ qmail-inject: \
+-load qmail-inject.o headerbody.o hfield.o newfield.o quote.o now.o \
++load qmail-inject.o rcpthosts.o cdb.a srs.o headerbody.o hfield.o newfield.o quote.o now.o \
+ control.o date822fmt.o constmap.o qmail.o case.a fd.a wait.a open.a \
+ getln.a sig.a getopt.a datetime.a token822.o env.a stralloc.a alloc.a \
+ substdio.a error.a str.a fs.a auto_qmail.o
+-	./load qmail-inject headerbody.o hfield.o newfield.o \
++	./load qmail-inject rcpthosts.o cdb.a srs.o headerbody.o hfield.o newfield.o \
+ 	quote.o now.o control.o date822fmt.o constmap.o qmail.o \
+ 	case.a fd.a wait.a open.a getln.a sig.a getopt.a datetime.a \
+ 	token822.o env.a stralloc.a alloc.a substdio.a error.a \
+-	str.a fs.a auto_qmail.o 
++	str.a fs.a auto_qmail.o -lsrs2
+ 
+ qmail-inject.0: \
+ qmail-inject.8
+@@ -1265,18 +1269,18 @@
+ 	> qmail-limits.7
+ 
+ qmail-local: \
+-load qmail-local.o qmail.o quote.o now.o gfrom.o myctime.o \
++load qmail-local.o constmap.o control.o rcpthosts.o srs.o cdb.a qmail.o quote.o now.o gfrom.o myctime.o \
+ slurpclose.o case.a getln.a getopt.a sig.a open.a seek.a lock.a fd.a \
+ wait.a env.a stralloc.a alloc.a strerr.a substdio.a error.a str.a \
+ fs.a datetime.a auto_qmail.o auto_patrn.o socket.lib maildirquota.o \
+ maildirgetquota.o maildiropen.o maildirparsequota.o overmaildirquota.o \
+ strtimet.o strpidt.o
+-	./load qmail-local qmail.o quote.o now.o gfrom.o myctime.o \
++	./load qmail-local constmap.o control.o rcpthosts.o srs.o cdb.a qmail.o quote.o now.o gfrom.o myctime.o \
+ 	slurpclose.o case.a getln.a getopt.a sig.a open.a seek.a \
+ 	lock.a fd.a wait.a env.a stralloc.a alloc.a strerr.a \
+ 	substdio.a error.a str.a fs.a datetime.a auto_qmail.o \
+ 	auto_patrn.o  `cat socket.lib` maildirquota.o maildirgetquota.o \
+-    maildiropen.o maildirparsequota.o overmaildirquota.o strtimet.o strpidt.o
++	maildiropen.o maildirparsequota.o overmaildirquota.o strtimet.o strpidt.o -lsrs2
+ 
+ qmail-local.0: \
+ qmail-local.8
+@@ -1630,16 +1634,16 @@
+ 	./compile qmail-rspawn.c
+ 
+ qmail-send: \
+-load qmail-send.o qsutil.o control.o constmap.o newfield.o prioq.o \
++load qmail-send.o rcpthosts.o cdb.a srs.o qsutil.o control.o constmap.o newfield.o prioq.o \
+ trigger.o fmtqfn.o quote.o now.o readsubdir.o qmail.o date822fmt.o \
+ datetime.a case.a ndelay.a getln.a wait.a seek.a fd.a sig.a open.a \
+ lock.a stralloc.a alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
+ auto_split.o env.a
+-	./load qmail-send qsutil.o control.o constmap.o newfield.o \
++	./load qmail-send rcpthosts.o cdb.a srs.o qsutil.o control.o constmap.o newfield.o \
+ 	prioq.o trigger.o fmtqfn.o quote.o now.o readsubdir.o \
+ 	qmail.o date822fmt.o datetime.a case.a ndelay.a getln.a \
+ 	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a alloc.a \
+-	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o env.a
++	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o env.a -lsrs2
+ 
+ qmail-send.0: \
+ qmail-send.8
+@@ -2088,6 +2092,25 @@
+ scan.h fmt.h
+ 	./compile splogger.c
+ 
++srs.o: \
++compile srs.c srs.h auto_qmail.h stralloc.h
++	./compile srs.c
++
++
++srsfilter: \
++load srsfilter.o srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
++	cdb.a case.a open.a stralloc.a alloc.a getln.a fd.a wait.a sig.a \
++	env.a substdio.a error.a str.a fs.a auto_qmail.o
++	./load srsfilter srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
++	cdb.a case.a open.a stralloc.a alloc.a getln.a fd.a wait.a sig.a \
++	env.a substdio.a error.a str.a fs.a auto_qmail.o -lsrs2
++
++srsfilter.o: \
++compile srsfilter.c sig.h readwrite.h exit.h env.h qmail.h substdio.h strerr.h \
++substdio.h fmt.h stralloc.h srs.h
++	./compile srsfilter.c
++
++
+ str.a: \
+ makelib str_len.o str_diff.o str_diffn.o str_cpy.o str_cpyb.o str_chr.o \
+ str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_diff.o byte_copy.o byte_cspn.o byte_rcspn.o \
+diff -Naur qmail-1.03.orig/qmail-inject.c qmail-1.03/qmail-inject.c
+--- qmail-1.03.orig/qmail-inject.c	1998-06-15 03:53:16.000000000 -0700
++++ qmail-1.03/qmail-inject.c	2007-01-12 22:42:00.000000000 -0800
+@@ -22,6 +22,7 @@
+ #include "auto_qmail.h"
+ #include "newfield.h"
+ #include "constmap.h"
++#include "srs.h"
+ 
+ #define LINELEN 80
+ 
+@@ -61,6 +62,11 @@
+ void temp() { _exit(111); }
+ void die_nomem() {
+  substdio_putsflush(subfderr,"qmail-inject: fatal: out of memory\n"); temp(); }
++void die_srs() {
++ substdio_puts("qmail-inject: fatal: ");
++ substdio_puts(subfderr,srs_error.s);
++ substdio_putsflush(subfderr,"\n");
++ perm(); }
+ void die_invalid(sa) stralloc *sa; {
+  substdio_putsflush(subfderr,"qmail-inject: fatal: invalid header field: ");
+  substdio_putflush(subfderr,sa->s,sa->len); perm(); }
+@@ -99,6 +105,15 @@
+    int i;
+ 
+    if (!stralloc_0(&sender)) die_nomem();
++   
++   switch(srsforward(sender.s)) {
++     case -3: die_srs(); break;
++     case -2: die_nomem(); break;
++     case -1: die_read(); break;
++     case 0: break;
++     case 1: if (!stralloc_copy(&sender,&srs_result)) die_nomem(); break;
++   }
++   
+    qmail_from(&qqt,sender.s);
+ 
+    for (i = 0;i < reciplist.len;++i)
+diff -Naur qmail-1.03.orig/qmail-local.c qmail-1.03/qmail-local.c
+--- qmail-1.03.orig/qmail-local.c	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/qmail-local.c	2007-01-12 22:42:00.000000000 -0800
+@@ -28,6 +28,7 @@
+ #include "myctime.h"
+ #include "gfrom.h"
+ #include "auto_patrn.h"
++#include "srs.h"
+ 
+ void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
+ 
+@@ -68,6 +69,14 @@
+ char outbuf[1024];
+ #define QUOTABUFSIZE    256
+ 
++void die_control() { strerr_die1x(111,"Unable to read controls (#4.3.0)"); }
++void die_srs() {
++  if (!stralloc_copys(&foo,srs_error.s)) temp_nomem();
++  if (!stralloc_cats(&foo," (#4.3.0)")) temp_nomem();
++  if (!stralloc_0(&foo)) temp_nomem();
++  strerr_die1x(111,foo.s);
++}
++
+ /* child process */
+ 
+ char fntmptph[80 + FMT_ULONG * 2];
+@@ -293,6 +302,15 @@
+    qmail_put(&qqt,messline.s,messline.len);
+   }
+  while (match);
++ 
++ switch(srsforward(ueo.s)) {
++   case -3: die_srs(); break;
++   case -2: temp_nomem(); break;
++   case -1: die_control(); break;
++   case 0: break;
++   case 1: if (!stralloc_copy(&ueo,&srs_result)) temp_nomem(); break;
++ } 
++ 
+  qmail_from(&qqt,ueo.s);
+  while (*recips) qmail_to(&qqt,*recips++);
+  qqx = qmail_close(&qqt);
+diff -Naur qmail-1.03.orig/qmail-send.c qmail-1.03/qmail-send.c
+--- qmail-1.03.orig/qmail-send.c	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/qmail-send.c	2007-01-12 22:42:00.000000000 -0800
+@@ -31,6 +31,7 @@
+ #include "constmap.h"
+ #include "fmtqfn.h"
+ #include "readsubdir.h"
++#include "srs.h"
+ 
+ /* critical timing feature #1: if not triggered, do not busy-loop */
+ /* critical timing feature #2: if triggered, respond within fixed time */
+@@ -55,6 +56,7 @@
+ stralloc bouncehost = {0};
+ stralloc doublebounceto = {0};
+ stralloc doublebouncehost = {0};
++stralloc srs_domain = {0};
+ 
+ char strnum2[FMT_ULONG];
+ char strnum3[FMT_ULONG];
+@@ -691,9 +693,30 @@
+     { log1("warning: unable to start qmail-queue, will try later\n"); return 0; }
+    qp = qmail_qp(&qqt);
+ 
+-   if (*sender.s) { bouncesender = ""; bouncerecip = sender.s; }
+-   else { bouncesender = "#@[]"; bouncerecip = doublebounceto.s; }
+-
++   if (*sender.s) {
++     if (srs_domain.len) {
++       int j = 0;
++       j = byte_rchr(sender.s, sender.len, '@');
++       if (j < sender.len) {
++         if (srs_domain.len == sender.len - j - 1 && stralloc_starts(&srs_domain, sender.s + j + 1)) {
++           switch(srsreverse(sender.s)) {
++             case -3: log1(srs_error.s); log1("\n"); _exit(111); break;
++             case -2: nomem(); break;
++             case -1: log1("alert: unable to read controls\n"); _exit(111); break;
++             case 0: break;
++             case 1: if (!stralloc_copy(&sender,&srs_result)) nomem(); break;
++           }
++           if (chdir("queue") == -1) { log1("alert: unable to switch to queue directory\n"); _exit(111); }
++         }
++       }
++     }
++     bouncesender = "";
++     bouncerecip = sender.s;
++   } else {
++     bouncesender = "#@[]";
++     bouncerecip = doublebounceto.s;
++   }
++   
+    while (!newfield_datemake(now())) nomem();
+    qmail_put(&qqt,newfield_date.s,newfield_date.len);
+    qmail_puts(&qqt,"From: ");
+@@ -1452,6 +1475,8 @@
+  if (control_rldef(&bouncefrom,"control/bouncefrom",0,"MAILER-DAEMON") != 1) return 0;
+  if (control_rldef(&bouncehost,"control/bouncehost",1,"bouncehost") != 1) return 0;
+  if (control_rldef(&doublebouncehost,"control/doublebouncehost",1,"doublebouncehost") != 1) return 0;
++ if (control_readline(&srs_domain,"control/srs_domain") == -1) return 0;
++ if (srs_domain.len && !stralloc_0(&srs_domain)) return 0;
+  if (control_rldef(&doublebounceto,"control/doublebounceto",0,"postmaster") != 1) return 0;
+  if (!stralloc_cats(&doublebounceto,"@")) return 0;
+  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
+diff -Naur qmail-1.03.orig/qmail-showctl.c qmail-1.03/qmail-showctl.c
+--- qmail-1.03.orig/qmail-showctl.c	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/qmail-showctl.c	2007-01-12 22:45:06.000000000 -0800
+@@ -297,6 +297,11 @@
+ 
+   do_str("smtpgreeting",1,"smtpgreeting","SMTP greeting: 220 ");
+   do_lst("smtproutes","No artificial SMTP routes.","SMTP route: ","");
++  do_str("srs_domain",0,"","SRS domain name is ");
++  do_lst("srs_secrets","No secrets","","");
++  do_int("srs_maxage","21","SRS maxage is ","");
++  do_int("srs_hashlength","4","SRS hashlength is ","");
++  do_int("srs_hashmin","4","SRS hashmin is ","");
+   do_int("spfbehavior","0","The SPF behavior is ","");
+   do_str("spfexp",0,SPF_DEFEXP,"The SPF default explanation is: 550 ");
+   do_str("spfguess",0,"","The guess SPF rules are: ");
+@@ -344,6 +349,11 @@
+     if (str_equal(d->d_name,"rcpthosts")) continue;
+     if (str_equal(d->d_name,"smtpgreeting")) continue;
+     if (str_equal(d->d_name,"smtproutes")) continue;
++    if (str_equal(d->d_name,"srs_domain")) continue;
++    if (str_equal(d->d_name,"srs_secrets")) continue;
++    if (str_equal(d->d_name,"srs_maxage")) continue;
++    if (str_equal(d->d_name,"srs_hashlength")) continue;
++    if (str_equal(d->d_name,"srs_hashmin")) continue;
+     if (str_equal(d->d_name,"spfbehavior")) continue;
+     if (str_equal(d->d_name,"spfexp")) continue;
+     if (str_equal(d->d_name,"spfguess")) continue;
+diff -Naur qmail-1.03.orig/README.srs qmail-1.03/README.srs
+--- qmail-1.03.orig/README.srs	1969-12-31 16:00:00.000000000 -0800
++++ qmail-1.03/README.srs	2007-01-12 22:52:06.000000000 -0800
+@@ -0,0 +1,23 @@
++1) Required parameters:
++
++echo srs.YOURDOMAIN > /var/qmail/control/srs_domain
++echo SECRET > /var/qmail/control/srs_secrets
++
++* YOURDOMAIN: Replace with your domain name, e.g. srs.foo-bar.com
++* SECRET: Replace with a random string
++
++echo 21 > /var/qmail/control/srs_maxage
++echo  4 > /var/qmail/control/srs_hashlength
++echo  4 > /var/qmail/control/srs_hashmin
++echo = > /var/qmail/control/srs_separator
++echo 0 > /var/qmail/control/srs_alwaysrewrite
++
++2) Configure your SRS domain, ensure srs.YOURDOMAIN points to your server as an mx record. ("srs	IN MX 10 yourserver").
++
++echo srs.YOURDOMAIN >> /var/qmail/control/rcpthosts
++echo "srs.YOURDOMAIN:srs" >> /var/qmail/control/virtualdomains
++echo "| /var/qmail/bin/srsfilter" > /var/qmail/alias/.qmail-srs-default
++
++* YOURDOMAIN: Replace with your domain name, e.g. srs.foo-bar.com
++
++3) Restart qmail
+diff -Naur qmail-1.03.orig/srs.c qmail-1.03/srs.c
+--- qmail-1.03.orig/srs.c	1969-12-31 16:00:00.000000000 -0800
++++ qmail-1.03/srs.c	2007-01-12 22:51:35.000000000 -0800
+@@ -0,0 +1,166 @@
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <srs2.h>
++#include "auto_qmail.h"
++#include "stralloc.h"
++#include "srs.h"
++
++static stralloc srs_domain = {0};
++static stralloc srs_secrets = {0};
++static unsigned int srs_maxage = 0;
++static unsigned int srs_hashlength = 0;
++static unsigned int srs_hashmin = 0;
++static unsigned int srs_alwaysrewrite = 0;
++static stralloc srs_separator = {0};
++
++stralloc srs_result = {0};
++stralloc srs_error = {0};
++
++static int setup_ok = 0;
++static int srs_secrets_ok = 0;
++
++static int setup(int with_rcpthosts) {
++
++  if (setup_ok == 1) return 1;
++
++  if (chdir(auto_qmail) == -1) return -1;
++  if (control_init() == -1) return -1;
++
++  if (control_readline(&srs_domain,"control/srs_domain") == -1) return -1;
++  if (srs_domain.len) {
++    if (!stralloc_0(&srs_domain)) return -2;
++  } else {
++    return 0;
++  }
++
++  srs_secrets_ok = control_readfile(&srs_secrets,"control/srs_secrets",0);
++  if (srs_secrets_ok == -1) return -1;
++  
++  if (control_readint(&srs_maxage,"control/srs_maxage") == -1) return 0;
++  if (control_readint(&srs_maxage,"control/srs_hashlength") == -1) return 0;
++  if (control_readint(&srs_maxage,"control/srs_hashmin") == -1) return 0;
++  if (srs_hashmin > srs_hashlength) srs_hashmin = srs_hashlength;
++  
++  if (control_readint(&srs_alwaysrewrite,"control/srs_alwaysrewrite") == -1) return 0;
++  
++  if (control_readline(&srs_separator,"control/srs_separator") == -1) return -1;
++  if (srs_separator.len && !stralloc_0(&srs_separator)) return -2;
++  if (srs_separator.len && srs_separator.s[0] != '-' && srs_separator.s[0] != '+' && srs_separator.s[0] != '=') {
++    if (!stralloc_copys(&srs_separator,"")) return -2;
++  }
++  
++  if (!srs_alwaysrewrite) {
++    if (with_rcpthosts && rcpthosts_init() == -1) return -1;
++  }
++
++  setup_ok = 1;
++  return 1;
++  
++}
++
++static int srs_error_str(int code) {
++  if (!stralloc_copys(&srs_error,"SRS: ")) return -2;
++  if (!stralloc_cats(&srs_error,srs_strerror(code))) return -2;
++  if (!stralloc_0(&srs_error)) return -2;   
++  return -3;
++}
++
++
++int srsforward(char *address) {
++  int x = 0;
++
++  /* Return if setup was unsucessfull */
++  x = setup(1);
++  if (x < 1) return(x);
++  
++  /* Return zero if null-sender */
++  x = str_len(address);
++  if (x <= 1) return 0;
++
++  /* Return zero if local address */
++  if (!srs_alwaysrewrite && rcpthosts(address,x) == 1) return 0;  
++  
++  /* Now it's time to rewrite the envelope */
++  char srsaddress[1000];
++
++  srs_t *srs; 
++  srs = srs_new();
++  if (srs_maxage > 0) srs->maxage = srs_maxage;
++  if (srs_hashlength > 0) srs->hashlength = srs_hashlength;
++  if (srs_hashmin > 0) srs->hashmin = srs_hashmin;
++  
++  if (srs_alwaysrewrite){  
++    x = srs_set_alwaysrewrite(srs, TRUE);
++    if (x != SRS_SUCCESS) return srs_error_str(x);
++  }
++  
++  if (srs_separator.len) {
++    x = srs_set_separator(srs, srs_separator.s[0]); 
++    if (x != SRS_SUCCESS) return srs_error_str(x);
++  }
++  
++  int i = 0;
++  int j = 0;
++  for (j = 0;j < srs_secrets.len;++j)
++    if (!srs_secrets.s[j]) {
++      x = srs_add_secret(srs, srs_secrets.s + i);
++      if (x != SRS_SUCCESS) return srs_error_str(x);
++      i = j + 1;
++    }
++  
++  x = srs_forward(srs, srsaddress, 1000, address, srs_domain.s);
++  if (x != SRS_SUCCESS) return srs_error_str(x);
++  
++  if (!stralloc_copys(&srs_result,srsaddress)) return -2;
++  if (!stralloc_0(&srs_result)) return -2;
++  
++  srs_free(srs);
++  
++  return 1;
++}
++
++int srsreverse(char *srsaddress) {
++  int x = 0;
++
++  /* Return if setup was unsucessfull */
++  x = setup(0);
++  if (x < 1) return(x);
++  
++  /* Return error if null-sender */
++  x = str_len(srsaddress);
++  if (x <= 1) return -3;
++  
++  /* Now it's time to rewrite the envelope */
++  char address[1000];
++
++  srs_t *srs;
++  srs = srs_new();
++  if (srs_maxage > 0) srs->maxage = srs_maxage;
++  if (srs_hashlength > 0) srs->hashlength = srs_hashlength;
++  if (srs_hashmin > 0) srs->hashmin = srs_hashmin;
++  
++  if (srs_separator.len) {
++    x = srs_set_separator(srs, srs_separator.s[0]); 
++    if (x != SRS_SUCCESS) return srs_error_str(x);
++  }
++
++  int i = 0;
++  int j = 0;
++  for (j = 0;j < srs_secrets.len;++j)
++    if (!srs_secrets.s[j]) {
++      x = srs_add_secret(srs, srs_secrets.s + i);
++      if (x != SRS_SUCCESS) return srs_error_str(x);
++      i = j + 1;
++    }
++    
++  x = srs_reverse(srs, address, 1000, srsaddress);
++  if (x != SRS_SUCCESS) return srs_error_str(x);
++  
++  if (!stralloc_copys(&srs_result,address)) return -2;
++  if (!stralloc_0(&srs_result)) return -2;
++  
++  srs_free(srs);
++  
++  return 1;
++}
++
+diff -Naur qmail-1.03.orig/srsfilter.c qmail-1.03/srsfilter.c
+--- qmail-1.03.orig/srsfilter.c	1969-12-31 16:00:00.000000000 -0800
++++ qmail-1.03/srsfilter.c	2007-01-12 22:42:00.000000000 -0800
+@@ -0,0 +1,137 @@
++#include "sig.h"
++#include "readwrite.h"
++#include "exit.h"
++#include "env.h"
++#include "qmail.h"
++#include "strerr.h"
++#include "substdio.h"
++#include "fmt.h"
++#include "stralloc.h"
++#include "srs.h"
++
++#define FATAL "srsfilter: fatal: "
++#define IGNORE "srsfilter: ignore: "
++
++void die_nomem() { strerr_die2x(111,FATAL,"out of memory"); }
++
++struct qmail qqt;
++
++stralloc line = {0};
++int flagbody = 0;
++int flagnewline = 0;
++int flagto = 0;
++int seento = 0;
++
++void newheader() {
++  if (!stralloc_copyb(&line,"To: ",4)) die_nomem();
++  if (!stralloc_cat(&line,&srs_result)) die_nomem();
++  ++flagto; ++seento;
++}
++
++void skipheader() {
++  if (!stralloc_copys(&line,"")) die_nomem();
++}
++
++void printheader() {
++  qmail_put(&qqt, line.s, line.len);
++  qmail_put(&qqt,"\n",1);
++  if (!stralloc_copys(&line,"")) die_nomem();
++}
++
++int mywrite(fd,buf,len) int fd; char *buf; int len;
++{
++  int i;
++  if (flagbody) {
++    qmail_put(&qqt,buf,len);
++    return len;
++  } else {
++    i = 0;
++    while (buf[i]) {
++      if (buf[i] == '\n') {
++        if (flagnewline) {
++          if (!seento) { newheader(); printheader(); }
++          qmail_put(&qqt,"\n",1); i++; flagbody = 1; continue;
++        }
++        if (flagto && (line.s[0] == ' ' || line.s[0] == '\t')) {
++          skipheader(); i++; continue;
++        }
++        if (line.len > 2 && line.s[2] == ':' && (line.s[1] == 'o' ||
++        line.s[1] == 'O') && (line.s[0] == 'T' || line.s[0] == 't')) {
++          if (seento) { skipheader(); i++; continue; }
++          newheader();
++        } else { flagto = 0; }
++        printheader();
++        flagnewline = 1;
++      } else {
++        if (!stralloc_append(&line,&buf[i])) die_nomem();
++        flagnewline = 0;
++      }
++      ++i;
++    }
++    return len;
++  }
++}
++
++char inbuf[SUBSTDIO_INSIZE];
++char outbuf[1];
++substdio ssin = SUBSTDIO_FDBUF(read,0,inbuf,sizeof inbuf);
++substdio ssout = SUBSTDIO_FDBUF(mywrite,-1,outbuf,sizeof outbuf);
++
++char num[FMT_ULONG];
++
++void main(argc,argv)
++int argc;
++char **argv;
++{
++  char *ext2;
++  char *host;
++  char *sender;
++  char *qqx;
++ 
++  sig_pipeignore();
++ 
++  sender = env_get("SENDER");
++  if (!sender)
++    strerr_die2x(100,FATAL,"SENDER not set");
++  if (str_len(sender)) {
++    /* Return zero, the message will not bounce back */
++    strerr_die2x(0,IGNORE,"SENDER must be empty");
++  }
++  ext2 = env_get("EXT2");
++  if (!ext2)
++    strerr_die2x(100,FATAL,"EXT2 not set");
++  host = env_get("HOST");
++  if (!host)
++    strerr_die2x(100,FATAL,"HOST not set");
++    
++  switch(srsreverse(ext2)) {
++    case -3: strerr_die2x(100,FATAL,srs_error.s); break;
++    case -2: die_nomem(); break;
++    case -1: strerr_die2x(111,FATAL,"unable to read controls"); break;
++    case 0: strerr_die2x(100,FATAL,"unable to rewrite envelope"); break;
++  }
++ 
++  if (qmail_open(&qqt) == -1)
++    strerr_die2x(111,FATAL,"unable to fork");
++  if (substdio_copy(&ssout,&ssin) != 0)
++    strerr_die2x(111,FATAL,"unable to read message");
++  substdio_flush(&ssout);
++  
++  if (!flagbody) {
++    qmail_fail(&qqt);
++    strerr_die2x(100,FATAL,"unable to read message body");
++  }
++
++  num[fmt_ulong(num,qmail_qp(&qqt))] = 0;
++
++  /* Always from nullsender */
++  qmail_from(&qqt,"");
++  
++  qmail_to(&qqt,srs_result.s);
++  
++  qqx = qmail_close(&qqt);
++  if (*qqx) strerr_die2x(*qqx == 'D' ? 100 : 111,FATAL,qqx + 1);
++  strerr_die2x(0,"srsfilter: qp ",num);
++
++}
++
+diff -Naur qmail-1.03.orig/srs.h qmail-1.03/srs.h
+--- qmail-1.03.orig/srs.h	1969-12-31 16:00:00.000000000 -0800
++++ qmail-1.03/srs.h	2007-01-12 22:42:00.000000000 -0800
+@@ -0,0 +1,9 @@
++#ifndef SRS_H
++#define SRS_H
++
++extern stralloc srs_result;
++extern stralloc srs_error;
++extern int srsforward(char *);
++extern int srsreverse(char *);
++
++#endif
+diff -Naur qmail-1.03.orig/TARGETS qmail-1.03/TARGETS
+--- qmail-1.03.orig/TARGETS	2007-01-12 22:39:35.000000000 -0800
++++ qmail-1.03/TARGETS	2007-01-12 22:43:14.000000000 -0800
+@@ -186,6 +186,10 @@
+ timeoutconn.o
+ tcpto.o
+ dns.o
++srsfilter
++srsfilter.o
++srs
++srs.o
+ spf.o
+ ip.o
+ ipalloc.o

@@ -1,0 +1,13 @@
+--- qmail-1.03/Makefile	2013-10-20 17:50:40.618999997 -0700
++++ qmail-1.03/Makefile	2013-10-20 18:40:13.905102076 -0700
+@@ -1,8 +1,7 @@
+ # Don't edit Makefile! Use conf-* for configuration.
+ 
+-VPOPMAIL_HOME=/home/vpopmail
+ SMTPD_CHKUSER_OBJ=chkuser.o
+-VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
++VPOPMAIL_LIBS=`head -1 /etc/vpopmail/lib_deps`
+-LIB_DK=LDK_PATH
++LIB_DK=/usr/lib/libdomainkeys.a
+ 
+ SHELL=/bin/sh

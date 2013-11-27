@@ -1,0 +1,95 @@
+diff -Naur qmail-1.03-chkuser/chkuser_settings.h qmail-1.03-modchkuser/chkuser_settings.h
+--- qmail-1.03-chkuser/chkuser_settings.h	2011-01-23 10:40:10.000000000 -0500
++++ qmail-1.03-modchkuser/chkuser_settings.h	2011-02-24 16:36:52.000000000 -0500
+@@ -120,7 +120,8 @@
+  * Uncomment to enable usage of "#" and "+" characters within sender address
+  * This is used by SRS (Sender Rewriting Scheme) products
+  */
+-/* #define CHKUSER_ALLOW_SENDER_SRS */
++// enabled for Qmailtoaster
++#define CHKUSER_ALLOW_SENDER_SRS 
+ 
+ /*
+  * The following #define sets the minimum length of a domain:
+@@ -230,7 +231,7 @@
+  * (for mailing lists this is done without checking this define)
+  * This define substitutes #define CHKUSER_ENABLE_EXTENSIONS
+  */
+-/* #define CHKUSER_ENABLE_USERS_EXTENSIONS */
++#define CHKUSER_ENABLE_USERS_EXTENSIONS
+ 
+ /*
+  * Enables checking for EZMLM lists
+@@ -257,7 +258,7 @@
+  * Enables checking for mailman lists
+  *
+  */
+-/* #define CHKUSER_ENABLE_MAILMAN_LISTS */
++#define CHKUSER_ENABLE_MAILMAN_LISTS
+ 
+ /*
+  * Identifies the pattern string to be searched within mailman aliases
+@@ -303,7 +304,8 @@
+  * Uncomment to enable checking of domain MX for rcpt addresses
+  * It works on any rcpt address domain that is not inside rcpthosts
+  */
+-/* #define CHKUSER_RCPT_MX */
++// Enabled for Qmailtoaster
++#define CHKUSER_RCPT_MX
+ 
+ /*
+  * Uncomment to enable checking of user and domain format for sender address
+@@ -424,16 +426,16 @@
+  * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_SENDER_SRS
+  *
+  */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_1 '$' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_2 '%' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_3 '£' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_4 '?' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_5 '*' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_6 '^' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_7 '~' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_8 '&' */	/* available for other characters */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_9 '#' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_10 '=' */ 	/* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_1 '$' 
++#define CHKUSER_ALLOW_SENDER_CHAR_2 '%'
++#define CHKUSER_ALLOW_SENDER_CHAR_3 '/'
++#define CHKUSER_ALLOW_SENDER_CHAR_4 '?'
++#define CHKUSER_ALLOW_SENDER_CHAR_5 '*'
++#define CHKUSER_ALLOW_SENDER_CHAR_6 '^'
++#define CHKUSER_ALLOW_SENDER_CHAR_7 '~'
++#define CHKUSER_ALLOW_SENDER_CHAR_8 '&'
++#define CHKUSER_ALLOW_SENDER_CHAR_9 '#'
++#define CHKUSER_ALLOW_SENDER_CHAR_10 '='
+ 
+ 
+ /*
+@@ -445,16 +447,16 @@
+  * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_RCPT_SRS
+  *
+  */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_1 '$' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_2 '%' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_3 '£' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_4 '?' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_5 '*' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_6 '^' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_7 '~' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_8 '&' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_9 '#' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_10 '=' */ 	/* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_1 '$'
++#define CHKUSER_ALLOW_RCPT_CHAR_2 '%'
++#define CHKUSER_ALLOW_RCPT_CHAR_3 '/'
++#define CHKUSER_ALLOW_RCPT_CHAR_4 '?'
++#define CHKUSER_ALLOW_RCPT_CHAR_5 '*'
++#define CHKUSER_ALLOW_RCPT_CHAR_6 '^'
++#define CHKUSER_ALLOW_RCPT_CHAR_7 '~'
++#define CHKUSER_ALLOW_RCPT_CHAR_8 '&'
++#define CHKUSER_ALLOW_RCPT_CHAR_9 '#'
++#define CHKUSER_ALLOW_RCPT_CHAR_10 '='
+ 
+ 
+ /*

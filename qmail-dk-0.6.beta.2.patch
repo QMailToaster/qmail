@@ -1,0 +1,758 @@
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/alloc.c ./alloc.c
+--- /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/alloc.c	1998-06-15 14:53:16.000000000 +0400
++++ ./alloc.c	2006-12-02 23:59:16.000000000 +0300
+@@ -1,6 +1,6 @@
+ #include "alloc.h"
+ #include "error.h"
+-extern char *malloc();
++extern void *malloc();
+ extern void free();
+ 
+ #define ALIGNMENT 16 /* XXX: assuming that this alignment is enough */
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-gid.c ./auto-gid.c
+--- /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-gid.c	1998-06-15 14:53:16.000000000 +0400
++++ ./auto-gid.c	2006-12-03 00:24:50.000000000 +0300
+@@ -16,7 +16,7 @@
+   if (substdio_puts(&ss1,s) == -1) _exit(111);
+ }
+ 
+-void main(argc,argv)
++int main(argc,argv)
+ int argc;
+ char **argv;
+ {
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-int.c ./auto-int.c
+--- /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-int.c	1998-06-15 14:53:16.000000000 +0400
++++ ./auto-int.c	2006-12-03 11:58:25.000000000 +0300
+@@ -13,7 +13,7 @@
+   if (substdio_puts(&ss1,s) == -1) _exit(111);
+ }
+ 
+-void main(argc,argv)
++int main(argc,argv)
+ int argc;
+ char **argv;
+ {
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-str.c ./auto-str.c
+--- /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-str.c	1998-06-15 14:53:16.000000000 +0400
++++ ./auto-str.c	2006-12-03 00:17:08.000000000 +0300
+@@ -11,7 +11,7 @@
+   if (substdio_puts(&ss1,s) == -1) _exit(111);
+ }
+ 
+-void main(argc,argv)
++int main(argc,argv)
+ int argc;
+ char **argv;
+ {
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-uid.c ./auto-uid.c
+--- /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/auto-uid.c	1998-06-15 14:53:16.000000000 +0400
++++ ./auto-uid.c	2006-12-03 00:24:32.000000000 +0300
+@@ -16,7 +16,7 @@
+   if (substdio_puts(&ss1,s) == -1) _exit(111);
+ }
+ 
+-void main(argc,argv)
++int main(argc,argv)
+ int argc;
+ char **argv;
+ {
+diff -u /home/allukjanov/RPMBUILD/BUILD/qmail-1.03/qmail-dk.c ./qmail-dk.c
+--- ./qmail-dk.c.orig	2006-11-26 07:48:06.000000000 +0300
++++ ./qmail-dk.c	2006-12-27 02:50:22.000000000 +0300
+@@ -1,3 +1,43 @@
++/*******************************************************************************
++ * qmail-dk : DomainKeys implementations for use with qMail
++ *******************************************************************************
++ * Authors: looks like that original code framework was taken from 
++ *          D.J.Bernshtein's qmail-queue.c.
++ *			qmail-dk was first seen when provided as a patch named 
++ *			"qmail-1.03-dk-0.54.patch". It was done by Russ Nelson.
++ *			Huge modifications to the code, cleanup and bug fixes are done by 
++ *			Alexey Loukianov a.k.a. LeXa2.
++ *******************************************************************************
++ * Version: 0.6.beta.2
++ *******************************************************************************
++ * Changelog:
++ * 2006-11-25	LeXa2	Imported qmail-dk sources as created by 
++ *						qmail-1.03-dk-0.54.patch to Dev-C++ project in order to
++ *						try to figure out why are there troubles with silent 
++ *						rejection of messages from @gmail.com, sined with DKSig.
++ * 2006-11-26	LeXa2	Implemented basic level of debug-logging, traced out bug
++ *						in maybe_die_dk() code. Changed maybe_die_dk() to distinct
++ *						whether we are VERIFYig a message of SIGNing a message.
++ * 2006-12-01	LeXa2	Corrected BUGs in verify-message code, now it should 
++ *						reject a message only if it is told so by the letters in
++ *						DKVERIFY.
++ * 2006-12-02	LeXa2	Major rewrite of code. Optimised message-pump loop to do
++ *						less dk_message() calls. Rewritten write_signature() to 
++ *						use less memory (stralloc the string with a size based on
++ *						dk_siglen() call). Implemented very verbose logging system
++ *						intended for debugging of qmail-dk problems. Verbose 
++ *						logging can be turned on by exporting DKDEBUG environment
++ *						variable. Contents of DKDEBUG are ignored.
++ * 2006-12-03	LeXa2	Created a Makefile for use when standalone building 
++ *						qmail-dk. Currently it is based and requires a lot of 
++ *						files from qmail distribution, but most of them may be 
++ *						replaced by GPLed libowfat. In any case I can hardly 
++ *						imagine what may force me to waste time and port qmail-dk 
++ *						so it willcompile and link with it.
++ * 2006-12-27	LeXa2	Fixed "...found. dkqueue =..." written to logs no matter
++ *						is the DKDEBUG set or not.
++ *******************************************************************************/
++
+ #include <sys/types.h>
+ #include "readwrite.h"
+ #include "sig.h"
+@@ -25,6 +65,71 @@
+ #define DEATH 86400 /* 24 hours; _must_ be below q-s's OSSIFIED (36 hours) */
+ #define ADDR 1003
+ 
++/* qmail-queue exit codes defines: */
++
++#define EXIT_500_UNDEF_ERR_12      12  /* qq: UNDEFINED, treated as permanent error. */
++#define EXIT_500_UNDEF_ERR_13      13  /* qq: UNDEFINED, treated as permanent error. */
++#define EXIT_500                   31  /* qq: permanent refusal to accept message SMTP: 5XX code */
++#define EXIT_500_UNDEF_ERR_32      32  /* qq: UNDEFINED, treated as permanent error. */
++#define EXIT_400                   71  /* qq: temporary refusal to accept message */
++#define EXIT_OUT_OF_MEM            51  /* qq: exit due to out of memory */
++#define EXIT_TIMEOUT               52  /* qq: Timeout error */ 
++#define EXIT_WRITE_ERR             53  /* qq: exit with message about write error */ 
++#define EXIT_READ_MSG_ENV_ERR      54  /* qq: "Unable to read the message or envelope" */ 
++#define EXIT_NO_CFG                55  /* qq: Unable to read a configuration file. */ 
++#define EXIT_QMAIL_DIR_ERR         61  /* qq: Problem with the qmail home directory. */
++#define EXIT_FILE_PID_ERR          63  /* qq: Problem with queue/pid.  */
++#define EXIT_FILE_MESS_ERR         64  /* qq: Problem with queue/mess. */
++#define EXIT_FILE_INTD_ERR         65  /* qq: Problem with queue/intd. */
++#define EXIT_FILE_TODO_ERR         66  /* qq: Problem with queue/todo. */
++#define EXIT_COMM_ERROR            74  /* qq: Connection to mail server succeeded, but communication failed. */ 
++#define EXIT_BUG                   81  /* qq: exit due to internal bug */ 
++#define EXIT_MSG                   82  /* qq: exit with custom error message */ 
++#define EXIT_400_QQ_EXEC_ERROR    120  /* qq: UNDEFINED, treated as temporary error. */
++
++/* Prototypes. TODO: Maybe it's worth creating qmail-dk.h and move prototypes there. */
++void die_out_of_mem();
++
++char *qmdkdebug = NULL; /* DEBUG Messaging flag. DEBUG is on if this one is not NULL 
++                           To enable DEBUG messaging code set DKDEBUG envvar. */
++
++char RejectMsg[500];
++
++/***
++ * Logs a message to stdin. 
++ * 'message' should be a pointer to ASCIIZ string.
++ */
++/* TODO: Think about rewriting using DJB's stralloc/substdio functions instead of fprintf
++         to get better cross-platform support. */
++void log_message( char * message ) {
++     fprintf(stderr, "qmail-dk:[%d]: %s\n", getppid(), message);
++}
++
++void log_message_concat( const char * m1, const char * m2, const char * m3, 
++                         const char * m4, const char * m5, const char * m6 ) 
++{
++    static stralloc str;
++    if(m1) if(!stralloc_copys(&str, m1)) die_out_of_mem();
++    if(m2) if(!stralloc_cats(&str, m2)) die_out_of_mem();
++    if(m3) if(!stralloc_cats(&str, m3)) die_out_of_mem();
++    if(m4) if(!stralloc_cats(&str, m4)) die_out_of_mem();
++    if(m5) if(!stralloc_cats(&str, m5)) die_out_of_mem();
++    if(m6) if(!stralloc_cats(&str, m6)) die_out_of_mem();
++    if(!stralloc_0(&str)) die_out_of_mem();
++    log_message(str.s);
++}
++
++
++/***
++ * Some job for preprocessor. Let us define short-named macros to automate logging calls.
++ */
++#define log_mesg(x1)					log_message((x1))
++#define log_mesg2(x1,x2) 				log_message_concat((x1), (x2), (char *) 0, (char *) 0, (char *) 0, (char *) 0)
++#define log_mesg3(x1,x2,x3) 			log_message_concat((x1), (x2), (x3), (char *) 0, (char *) 0, (char *) 0)
++#define log_mesg4(x1,x2,x3,x4) 			log_message_concat((x1), (x2), (x3), (x4), (char *) 0, (char *) 0)
++#define log_mesg5(x1,x2,x3,x4,x5) 		log_message_concat((x1), (x2), (x3), (x4), (x5), (char *) 0)
++#define log_mesg6(x1,x2,x3,x4,x5,x6) 	log_message_concat((x1), (x2), (x3), (x4), (x5), (x6))
++
+ char inbuf[2048];
+ struct substdio ssin;
+ char outbuf[256];
+@@ -38,60 +143,130 @@
+ int messfd;
+ int readfd;
+ 
+-void die(e) int e; { _exit(e); }
+-void die_write() { die(53); }
+-void die_read() { die(54); }
+-void sigalrm() { /* thou shalt not clean up here */ die(52); }
+-void sigbug() { die(81); }
+-void maybe_die_dk(e) DK_STAT e; {
+-  switch(e) {
+-  case DK_STAT_BADKEY: _exit(55);
+-  case DK_STAT_CANTVRFY: _exit(74);
+-  case DK_STAT_NORESOURCE: _exit(51);
+-  case DK_STAT_ARGS: _exit(12);
+-  case DK_STAT_SYNTAX: _exit(31);
+-  case DK_STAT_INTERNAL: _exit(81);
+-  }
++/***
++ * Die procs block.
++ */
++void die(int e) { 
++	_exit(e); 
+ }
+ 
+-unsigned int pidfmt(s,seq)
+-char *s;
+-unsigned long seq;
+-{
+- unsigned int i;
+- unsigned int len;
++void die_write() { 
++	log_mesg("Dying due to write operation error (disk full?)."); 
++	die(EXIT_WRITE_ERR); 
++}
+ 
+- len = 0;
+- i = fmt_str(s,"/tmp/qmail-dk."); len += i; if (s) s += i;
+- i = fmt_ulong(s,mypid); len += i; if (s) s += i;
+- i = fmt_str(s,"."); len += i; if (s) s += i;
+- i = fmt_ulong(s,starttime); len += i; if (s) s += i;
+- i = fmt_str(s,"."); len += i; if (s) s += i;
+- i = fmt_ulong(s,seq); len += i; if (s) s += i;
+- ++len; if (s) *s++ = 0;
++void die_read() { 
++	log_mesg("Dying due to read-related error.");
++	die(EXIT_READ_MSG_ENV_ERR); 
++}
+ 
+- return len;
++void die_out_of_mem() { 
++     log_mesg("Dying due to out-of-memory condition."); 
++     die(EXIT_OUT_OF_MEM); 
+ }
+ 
+-void pidopen()
+-{
+- unsigned int len;
+- unsigned long seq;
++/* TODO: Think about rewriting using DJB's stralloc functions instead of snprintf
++         to get better cross-platform support. */
++void die_custom_msg(char *msg, int fatal) {
++	if(fatal)
++		snprintf(RejectMsg, sizeof(RejectMsg), "D%s (#5.3.0)", msg);
++    else
++     	snprintf(RejectMsg, sizeof(RejectMsg), "Z%s (#4.3.0)", msg);
++    write(4, RejectMsg, str_len(RejectMsg));
++    die(EXIT_MSG);
++}
+ 
+- seq = 1;
+- len = pidfmt((char *) 0,seq);
+- pidfn = alloc(len);
+- if (!pidfn) die(51);
++void sigalrm() { 
++	/* thou shalt not clean up here */
++	log_mesg("Got SIGALRM, terminating.");
++	die(EXIT_TIMEOUT); 
++}
+ 
+- for (seq = 1;seq < 10;++seq)
+-  {
+-   if (pidfmt((char *) 0,seq) > len) die(81); /* paranoia */
+-   pidfmt(pidfn,seq);
+-   messfd = open_excl(pidfn);
+-   if (messfd != -1) return;
++void sigbug() { 
++	log_mesg("Dying due to a POSSIBLE BUG!");
++	die(EXIT_BUG);
++}
++
++void maybe_die_dk(DK_STAT e, char *vrfy) {
++	switch(e) {
++		case DK_STAT_OK: return;
++		case DK_STAT_BADKEY: 
++       		if(!vrfy) { 
++            	if(qmdkdebug) log_mesg("Cannot sign message due to invalid private key."); 
++            	die_custom_msg("qmail-dk: Cannot sign message due to invalid private key.", 1);
++       		}
++       		return;;
++  		case DK_STAT_NORESOURCE:
++       		if(!vrfy) { 
++	       		die_out_of_mem();
++       		}
++       		return;
++  		case DK_STAT_INTERNAL: 
++			if(qmdkdebug) log_mesg("Unxpected DK_STAT_INTERNAL.");
++       		sigbug();
++       		return;
++       	case DK_STAT_SYNTAX:
++			if(!vrfy) {
++            	if(qmdkdebug) log_mesg("Cannot sign message due to invalid message syntax."); 
++            	die_custom_msg("qmail-dk: Cannot sign message due to invalid message syntax.", 1);
++			}
++			return;
++       	case DK_STAT_NOSIG:
++		case DK_STAT_BADSIG: 
++		case DK_STAT_NOKEY:
++		case DK_STAT_CANTVRFY:
++		case DK_STAT_ARGS:
++		case DK_STAT_REVOKED:
++			if(vrfy) return;
++       	default:
++			if(qmdkdebug) log_mesg2("Unhandled DK_STAT: ", DK_STAT_to_string(e));
++			if(!vrfy) {
++				die_custom_msg("qmail-dk: Cannot sign message due to unknown libdomainkeys exit status.", 1);
++			}
+   }
++}
+ 
+- die(63);
++/***
++ * Format filename for temp file like:
++ * "/tmp/qmail-dk.[pid].[tai64starttime].[seq]"
++ */
++unsigned int pidfmt(char *s, unsigned long seq) {
++	unsigned int i;
++	unsigned int len;
++
++	len = 0;
++	i = fmt_str(s,"/tmp/qmail-dk."); len += i; if (s) s += i;
++	i = fmt_ulong(s, mypid); len += i; if (s) s += i;
++	i = fmt_str(s,"."); len += i; if (s) s += i;
++	i = fmt_ulong(s, starttime); len += i; if (s) s += i;
++	i = fmt_str(s,"."); len += i; if (s) s += i;
++	i = fmt_ulong(s, seq); len += i; if (s) s += i;
++ 	++len; if (s) *s++ = 0;
++ 	return len;
++}
++
++/***
++ * Open temp storage file, store it's filedescriptor num in "messfd".
++ * On success temp storage filename will be stored in "pidfn".
++ */
++void pidopen() {
++	unsigned int len;
++	unsigned long seq;
++
++	seq = 1;
++	len = pidfmt((char *) 0,seq);
++	pidfn = alloc(len);
++	if (!pidfn) die_out_of_mem();
++	
++	for (seq = 1; seq < 10; ++seq) {
++		if (pidfmt((char *) 0, seq) > len) die(EXIT_BUG); /* paranoia */
++		pidfmt(pidfn, seq);
++		messfd = open_excl(pidfn);
++		if (messfd != -1) return;
++	}
++	
++	if(qmdkdebug) log_mesg("Unable to create temporary file (tried 10 times with different names!).");
++	die(EXIT_FILE_PID_ERR);
+ }
+ 
+ char tmp[FMT_ULONG];
+@@ -100,101 +275,152 @@
+ char *dksign = 0;
+ stralloc dksignature = {0};
+ stralloc dkoutput = {0};
++stralloc tmp_str = {0};
+ char *dkverify = 0;
+ char *dkqueue = 0;
+ DK_LIB *dklib;
+ DK *dk;
+-DK_STAT st;
++DK_STAT st = DK_STAT_OK;
+ 
+ static void write_signature(DK *dk, char *keyfn)
+ {
+- char advice[2048];
++ static stralloc signature = {0};
+  char *selector;
+  char *from;
+  static stralloc keyfnfrom = {0};
+  int i;
+ 
++ if(qmdkdebug) log_mesg("Entered write_signature() proc");
+  from = dk_from(dk);
+  i = str_chr(keyfn, '%');
+  if (keyfn[i]) {
+-   if (!stralloc_copyb(&keyfnfrom,keyfn,i)) die(51);
+-   if (!stralloc_cats(&keyfnfrom,from)) die(51);
+-   if (!stralloc_cats(&keyfnfrom,keyfn + i + 1)) die(51);
++   if (!stralloc_copyb(&keyfnfrom,keyfn,i)) die_out_of_mem();
++   if (!stralloc_cats(&keyfnfrom,from)) die_out_of_mem();
++   if (!stralloc_cats(&keyfnfrom,keyfn + i + 1)) die_out_of_mem();
+  } else {
+-   if (!stralloc_copys(&keyfnfrom,keyfn)) die(51);
++   if (!stralloc_copys(&keyfnfrom,keyfn)) die_out_of_mem();
+  }
+- if (!stralloc_0(&keyfnfrom)) die(51);
++ if (!stralloc_0(&keyfnfrom)) die_out_of_mem();
++
++ if(qmdkdebug) log_mesg2("Going to read private key from file: ", keyfnfrom.s);
+ 
+  switch(control_readfile(&dksignature,keyfnfrom.s,0)) {
+- case 0:
+-   if (keyfn[i]) return;
+-   die(32);
+- case 1: break;
+- default: die(31);
++ 	case 1: /* Success */ 
++		if(qmdkdebug) log_mesg("Read successfully.");
++		break;
++ 	case 0: 
++		if (keyfn[i]) { 
++			if(qmdkdebug) log_mesg("Error reading, but DKSIGN contains % character. Treat failure to read as there is no need in signing.");
++			return;
++		}
++ 	default: 
++	   if(qmdkdebug) log_mesg2("Couldn't read signature file for signing: ", keyfnfrom.s);
++	   die_custom_msg("qmail-dk: Couldn't read signature file for signing.", 1);
+  }
++ 
++ /* DJB's control_readfile replaces all '\n' with '\0'. Have to correct. */
+  for(i=0; i < dksignature.len; i++)
+    if (dksignature.s[i] == '\0') dksignature.s[i] = '\n';
+- if (!stralloc_0(&dksignature)) die(51);
++ if (!stralloc_0(&dksignature)) die_out_of_mem();
+ 
+- st = dk_getsig(dk, dksignature.s, advice, sizeof(advice));
+- maybe_die_dk(st);
++ i = dk_siglen(dksignature.s);
++ if(qmdkdebug) {
++ 	if(stralloc_ready(&tmp_str, FMT_ULONG)) {
++		tmp_str.len = fmt_ulong(tmp_str.s, i);
++		if(stralloc_0(&tmp_str))
++			log_mesg2("dk_siglen returned ", tmp_str.s);
++	}
++ }
++ 
++ /* NB: dk_getsig requires buffer of length dk_siglen+1, as 
++        it pads signature with \0 */
++ if(!stralloc_ready(&signature, i+1)) die_out_of_mem();
++ st = dk_getsig(dk, dksignature.s, signature.s, i+1);
++ maybe_die_dk(st, 0); signature.len=i; 
++ if(qmdkdebug) log_mesg2("Got signature: ", signature.s);
+ 
+  if (!stralloc_cats(&dkoutput,
+    "Comment: DomainKeys? See http://antispam.yahoo.com/domainkeys\n"
+ 	   "DomainKey-Signature: a=rsa-sha1; q=dns; c=nofws;\n"
+-	   "  s=")) die(51);
++	   "  s=")) die_out_of_mem();
+  selector = keyfn;
+  while (*keyfn) {
+    if (*keyfn == '/') selector = keyfn+1;
+     keyfn++;
+  }
+- if (!stralloc_cats(&dkoutput,selector)) die(51);
+- if (!stralloc_cats(&dkoutput,"; d=")) die(51);
++ if (!stralloc_cats(&dkoutput,selector)) die_out_of_mem();
++ if (!stralloc_cats(&dkoutput,"; d=")) die_out_of_mem();
+  if (from) {
+-   if (!stralloc_cats(&dkoutput,from)) die(51);
+- } else if (!stralloc_cats(&dkoutput,"unknown")) die(51);
+- if (!stralloc_cats(&dkoutput,";\n  b=")) die(51);
+- if (!stralloc_cats(&dkoutput,advice)) die(51);
+- if (!stralloc_cats(&dkoutput,"  ;\n")) die(51);
++   if (!stralloc_cats(&dkoutput,from)) die_out_of_mem();
++ } else if (!stralloc_cats(&dkoutput,"unknown")) die_out_of_mem();
++ if (!stralloc_cats(&dkoutput,";\n  b=")) die_out_of_mem();
++ if (!stralloc_cat(&dkoutput,&signature)) die_out_of_mem();
++ if (!stralloc_cats(&dkoutput,";\n")) die_out_of_mem();
++ if(qmdkdebug) log_mesg("Leaving write_signature proc");
+ }
+ 
+ static char *binqqargs[2] = { "bin/qmail-queue", 0 } ;
+ 
+-void main(int argc, char *argv[])
++int main(int argc, char *argv[])
+ {
+  unsigned int len;
+- char ch;
++ char *status;
+  int pim[2];
+- int wstat;
++ int wstat, die_kind;
+  unsigned long pid;
+ 
+  sig_blocknone();
+  umask(033);
+ 
++ qmdkdebug = env_get("DKDEBUG");
+  relayclient = env_get("RELAYCLIENT");
+- if(relayclient){
+-  dksign = env_get("DKSIGN");
+-  if(! dksign)
+-   dksign = "/var/qmail/control/domainkeys/%/default";
+- }else{
+-  dkverify = env_get("DKVERIFY");
++ dkverify = env_get("DKVERIFY");
++
++ if (relayclient) {
++    if (qmdkdebug) log_mesg("RELAYCLIENT is set. Looking for DKSIGN...");
++	dksign = env_get("DKSIGN");
++    if (!dksign && !dkverify) { 
++        if (qmdkdebug) log_mesg("...not found, and DKVERIFY is not set, using defaults.");
++        dksign = "/var/qmail/control/domainkeys/%/default";
++        dkverify = 0;
++    } else if(dksign) {
++        if (qmdkdebug) log_mesg("...found.");
++        dkverify = 0;
++    } else {
++        if (qmdkdebug) log_mesg("...not found, and DKVERIFY is set, assuming verify mode.");
++	}
++    if (qmdkdebug) if(dksign) log_mesg3("dksign = \"", dksign, "\"");
++ } else {
++    if (qmdkdebug) log_mesg("RELAYCLIENT is NOT set. Looking for DKVERIFY...");
++    if (qmdkdebug) 
++		if(dkverify) log_mesg3("...found. dkverify = \"", dkverify, "\""); 
++		else log_mesg("...not found. dkverify = NULL");
+  }
+ 
++ if (qmdkdebug) log_mesg("Looking for DKQUEUE...");
+  dkqueue = env_get("DKQUEUE");
+- if (dkqueue && *dkqueue) binqqargs[0] = dkqueue;
+- else if (str_equal(argv[0]+str_rchr(argv[0], '/'), "/qmail-queue"))
+-   binqqargs[0] = "bin/qmail-queue.orig";
++ if (dkqueue && *dkqueue) {
++	binqqargs[0] = dkqueue;
++	if(qmdkdebug) log_mesg3("...found. dkqueue = \"", dkqueue, "\""); 
++ } else if (str_equal(argv[0]+str_rchr(argv[0], '/'), "/qmail-queue")) {
++    if (qmdkdebug) log_mesg("...not found, but we are called as qmail-queue.");
++	binqqargs[0] = "bin/qmail-queue.orig";
++ } else if (qmdkdebug) log_mesg("...not found.");
++ if (qmdkdebug) log_mesg3("Will use \"", binqqargs[0], "\" as qq handler.");
+ 
+  if (dksign || dkverify) {
+-   dklib = dk_init(0);
+-   if (!dklib) die(51);
+- }
+- if (dksign) {
+-    dk = dk_sign(dklib, &st, DK_CANON_NOFWS);
+-    if (!dk) die(31);
+- } else if (dkverify) {
+-    dk = dk_verify(dklib, &st);
+-    if (!dk) die(31);
++	if (qmdkdebug) log_mesg("Initializing DomainKeys lib...");
++   	dklib = dk_init(0);
++   	if (!dklib) die_out_of_mem();
++	if (qmdkdebug) log_mesg("...done.");
++	if (qmdkdebug) log_mesg("Initializing DK structure...");
++ 	if (dksign)	dk = dk_sign(dklib, &st, DK_CANON_NOFWS);
++ 	else if (dkverify) dk = dk_verify(dklib, &st);
++    if (!dk) { 
++		if (qmdkdebug) log_mesg("...FAIL! Dying with temporary failure.");
++		log_mesg("Error initializing libdomainkeys, dying with 4XX error code.");
++		die_custom_msg("qmail-dk: Error initializing libdomainkeys", 0);
++	} else if (qmdkdebug) log_mesg("...done.");
+  }
+ 
+  mypid = getpid();
+@@ -209,74 +435,131 @@
+ 
+  alarm(DEATH);
+ 
+- pidopen();
++ if(qmdkdebug) log_mesg("Going to create/open/unlink temporary storage file...");
++ pidopen(); if(qmdkdebug) log_mesg2("...created file: ", pidfn);
+  readfd = open_read(pidfn);
+- if (unlink(pidfn) == -1) die(63);
++ if (readfd == -1) { /* paranoia */
++ 	log_mesg("Got error while trying to open created temp file for readind. Dying.");
++	die(EXIT_FILE_PID_ERR); 
++ }
++ if (unlink(pidfn) == -1) {
++ 	log_mesg("Got error while trying to unlink created temp file. Dying.");
++	die(EXIT_FILE_PID_ERR);
++ }
+ 
+- substdio_fdbuf(&ssout,write,messfd,outbuf,sizeof(outbuf));
+- substdio_fdbuf(&ssin,read,0,inbuf,sizeof(inbuf));
++ substdio_fdbuf(&ssout, write, messfd, outbuf,sizeof(outbuf));
++ substdio_fdbuf(&ssin,  read,       0,  inbuf, sizeof(inbuf));
++
++ if(qmdkdebug) log_mesg("Starting up message-read-write pump.");
+ 
+  for (;;) {
+-   register int n;
+-   register char *x;
+-   int i;
++	register int n;
++	register char *inbuf, *start;
++	int i, i1;
+ 
+-   n = substdio_feed(&ssin);
+-   if (n < 0) die_read();
+-   if (!n) break;
+-   x = substdio_PEEK(&ssin);
+-   if (dksign || dkverify)
+-     for(i=0; i < n; i++) {
+-       if (x[i] == '\n') st = dk_message(dk, "\r\n", 2);
+-       else st = dk_message(dk, x+i, 1);
+-       maybe_die_dk(st);
+-      }
+-   if (substdio_put(&ssout,x,n) == -1) die_write();
+-   substdio_SEEK(&ssin,n);
++	n = substdio_feed(&ssin);
++	if (n < 0) die_read();
++	if (!n) break;
++	inbuf = start = substdio_PEEK(&ssin);
++	if ((dksign || dkverify) && (st==DK_STAT_OK)) {
++		i=0; i1=n;
++		while(i1--) {
++  			if(start[i] == '\n') {
++				st = dk_message(dk, start, i);
++  				start += i+1; i=0; 
++				st = dk_message(dk, "\r\n", 2);
++			} else { i++; }
++			if(st != DK_STAT_OK ) break;
++		}
++		if(st==DK_STAT_OK & i) {
++			st = dk_message(dk, start, i);
++		}
++		maybe_die_dk(st, dkverify);
++	}
++	if (substdio_put(&ssout,inbuf,n) == -1) die_write();
++	substdio_SEEK(&ssin, n);
+  }
+ 
+  if (substdio_flush(&ssout) == -1) die_write();
++ if(qmdkdebug) {
++	if (dksign || dkverify) log_mesg("Pumped up message through libdomainkeys, stored copy in temp file.");
++	else log_mesg("Stored copy in temp file.");
++ }
+ 
+  if (dksign || dkverify) {
+-   st = dk_eom(dk, (void *)0);
+-   maybe_die_dk(st);
+-   if (dksign) {
+-     write_signature(dk, dksign);
+-   } else if (dkverify) {
+-     char *status;
+-     if (!stralloc_copys(&dkoutput,"DomainKey-Status: ")) die(51);
+-     switch(st) {
+-     case DK_STAT_OK:         status = "good        "; break;
+-     case DK_STAT_BADSIG:     status = "bad         "; break;
+-     case DK_STAT_NOSIG:      status = "no signature"; break;
+-     case DK_STAT_NOKEY:
+-     case DK_STAT_CANTVRFY:   status = "no key      "; break;
+-     case DK_STAT_BADKEY:     status = "bad key     "; break;
+-     case DK_STAT_INTERNAL:
+-     case DK_STAT_ARGS:
+-     case DK_STAT_SYNTAX:     status = "bad format  "; break;
+-     case DK_STAT_NORESOURCE: status = "no resources"; break;
+-     case DK_STAT_REVOKED:    status = "revoked     "; break;
+-     }
+-     if (!stralloc_cats(&dkoutput,status)) die(51);
+-     if (!stralloc_cats(&dkoutput,"\n")) die(51);
+-     if (dkverify[str_chr(dkverify, 'A'+st)]) die(13);
+-     if (dkverify[str_chr(dkverify, 'a'+st)]) die(82);
++	 if(qmdkdebug) log_mesg("Going to call libdk end_of_message proc...");
++	/* TODO: Current libdk states dk_eom as deprecated proc. */
++	st = dk_eom(dk, (void *)0);
++   	maybe_die_dk(st, dkverify);
++ 	if(qmdkdebug) log_mesg("...done.");
++   	
++   	if (dksign) {
++     	write_signature(dk, dksign);
++   	} else if (dkverify) {
++		switch(st) {
++			case DK_STAT_OK:         status = "good        "; break;
++			case DK_STAT_BADSIG:     status = "bad         "; break;
++			case DK_STAT_NOSIG:      status = "no signature"; break;
++			case DK_STAT_NOKEY:		 
++			case DK_STAT_CANTVRFY:   status = "no key      "; break;
++			case DK_STAT_BADKEY:     status = "bad key     "; break;
++			case DK_STAT_INTERNAL:
++			case DK_STAT_ARGS:
++			case DK_STAT_SYNTAX:     status = "bad format  "; break;
++			case DK_STAT_NORESOURCE: status = "no resources"; break;
++			case DK_STAT_REVOKED:    status = "revoked     "; break;
++			default:				 status = "unknown bad "; break;
++		}
++		if(qmdkdebug) log_mesg2("Returned DomainKeys-Status: ", status);
++		
++		if (!stralloc_copys(&dkoutput, "DomainKey-Status: ")) die_out_of_mem();
++		if (!stralloc_cats(&dkoutput, status)) die_out_of_mem();
++		if (!stralloc_cats(&dkoutput, "\n")) die_out_of_mem();
++
++		/* TODO: Move rejection policy to control/dkcontrol file. */
++		/* TODO: Count domain DK policies published in DNS when making decision 
++				 whether to reject message or not. */
++		/* TODO: Include "Authentication-Results:" header to complify with 
++		         DomainKeys Internet Draft 02. */
++		die_kind = 0;
++		if (dkverify[str_chr(dkverify, 'A'+st)]) die_kind = 2; 
++		if (dkverify[str_chr(dkverify, 'a'+st)]) die_kind = 1;
++		if (die_kind) {
++			die_kind--;
++			if(!stralloc_copys(&tmp_str, "DomainKeys verify status: ")) die_out_of_mem();
++			if(!stralloc_cats(&tmp_str, status)) die_out_of_mem();
++			if(!stralloc_0(&tmp_str)) die_out_of_mem();
++			die_custom_msg(tmp_str.s, die_kind);
++		}
+    }
+  }
+ 
+- if (pipe(pim) == -1) die(59);
++ if(qmdkdebug) log_mesg3("dk_address() = \"", dk_address(dk), "\"");
++
++ if (pipe(pim) == -1) {
++	if(qmdkdebug) log_mesg("Error spawning pipe.");
++	die_custom_msg("qmail-dk: error spawning pipe.", 0);
++ }
+  
+  switch(pid = vfork()) {
+  case -1:
+-   close(pim[0]); close(pim[1]);
+-   die(58);
++   	close(pim[0]); close(pim[1]);
++	if(qmdkdebug) log_mesg("Error vforking (was going to execute qq).");
++	die_custom_msg("qmail-dk: error vforking qq", 0);
+  case 0:
+-   close(pim[1]);
+-   if (fd_move(0,pim[0]) == -1) die(120);
+-   if (chdir(auto_qmail) == -1) die(61);
+-   execv(*binqqargs,binqqargs);
+-   die(120);
++   	close(pim[1]);
++   	if (fd_move(0, pim[0]) == -1) {
++		if(qmdkdebug) log_mesg("Error moving fd to qq stdin.");
++		die_custom_msg("qmail-dk: error moving fd to qq stdin", 0);
++	}
++   	if (chdir(auto_qmail) == -1) {
++		if(qmdkdebug) log_mesg2("Can't chdir to:", auto_qmail);
++		die(EXIT_QMAIL_DIR_ERR);
++	}
++   	execv(*binqqargs, binqqargs);
++
++	if(qmdkdebug) log_mesg("Error calling execv, normally shouldn't fall in here.");
++	die(EXIT_400_QQ_EXEC_ERROR);
+  }
+ 
+  close(pim[0]);
+@@ -294,10 +577,19 @@
+  if (substdio_flush(&ssout) == -1) die_write();
+  close(pim[1]);
+ 
+- if (wait_pid(&wstat,pid) != pid)
+-   die(57);
+- if (wait_crashed(wstat))
+-   die(57);
+- die(wait_exitcode(wstat));
++ if (wait_pid(&wstat,pid) != pid) {
++	if(qmdkdebug) log_mesg("Error waiting for qq to finish.");
++	die(57);
++ }
++ if (wait_crashed(wstat)) {
++	if(qmdkdebug) log_mesg("qq crashed.");
++	die(57);
++ }
+ 
++ die_kind = wait_exitcode(wstat);
++ if(qmdkdebug) {
++ 	RejectMsg[fmt_uint(RejectMsg, die_kind)]=0;
++ 	log_mesg2("qq process exited with code ", RejectMsg);
++ } 
++ die(die_kind);
+ }

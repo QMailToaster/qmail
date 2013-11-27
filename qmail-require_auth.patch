@@ -1,0 +1,57 @@
+--- qmail-1.03.orig/qmail-smtpd.c	2006-11-08 21:27:14.000000000 +0100
++++ qmail-1.03/qmail-smtpd.c	2006-11-08 23:26:45.000000000 +0100
+@@ -57,6 +57,9 @@
+ unsigned int databytes = 0;
+ int timeout = 1200;
+ unsigned int spfbehavior = 0;
++unsigned int require_auth = 0;
++int flagauth = 0;
++
+ 
+ const char *protocol = "SMTP";
+ 
+@@ -105,6 +108,8 @@
+ void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
+ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
++void die_cannot_auth() { out("421 REQUIRE_AUTH set without valid AUTH program.\r\n"); flush(); _exit(1); }
++
+ 
+ void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); }
+ void err_bmf() { out("553 sorry, your envelope sender has been denied (#5.7.1)\r\n"); }
+@@ -138,6 +143,7 @@
+ int err_authabrt() { out("501 auth exchange canceled (#5.0.0)\r\n"); return -1; }
+ int err_input() { out("501 malformed auth input (#5.5.4)\r\n"); return -1; }
+ void err_authfail() { out("535 authentication failed (#5.7.1)\r\n"); }
++int err_authfirst() { out("503 AUTH first (#5.5.1)\r\n"); }
+ 
+ stralloc greeting = {0};
+ stralloc spflocal = {0};
+@@ -267,6 +273,9 @@
+ 
+   reply554 = env_get("REPLY554"); 
+ 
++  x = env_get("REQUIRE_AUTH");
++  if(x) { scan_ulong(x,&u); if (u>0) require_auth = 1; }
++
+ #ifdef TLS
+   if (env_get("SMTPS")) { smtps = 1; tls_init(); }
+   else
+@@ -508,6 +517,7 @@
+   if (chkuser_sender (&addr) != CHKUSER_OK) { return; }
+ /* end chkuser code */
+   
++  if (require_auth) if (!flagauth) { err_authfirst(); return; }
+   flagsize = 0;
+   flagbarfspf = 0;
+   mailfrom_parms(arg);
+@@ -872,7 +882,6 @@
+ static stralloc slop = {0};     /* b64 challenge */
+ #endif
+ 
+-int flagauth = 0;
+ char **childargs;
+ char ssauthbuf[512];
+ substdio ssauth = SUBSTDIO_FDBUF(safewrite,3,ssauthbuf,sizeof(ssauthbuf));
+
+

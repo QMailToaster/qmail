@@ -1,0 +1,78 @@
+--- qmail-smtpd.c	2007-02-09 22:32:52.000000000 +0100
++++ ../qmail-1.03.lfpatched/qmail-smtpd.c	2007-02-09 22:14:02.000000000 +0100
+@@ -107,7 +107,6 @@
+ void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
+-void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+ void die_cannot_auth() { out("421 REQUIRE_AUTH set without valid AUTH program.\r\n"); flush(); _exit(1); }
+ 
+ 
+@@ -767,7 +766,8 @@
+   int flagmaybey; /* 1 if this line might match \r\n, if fih */
+   int flagmaybez; /* 1 if this line might match DELIVERED, if fih */
+  
+-  state = 1;
++  /* NEWLINE: We start in state 2 now, instead of state 1. */
++  state = 2;
+   *hops = 0;
+   flaginheader = 1;
+   pos = 0; flagmaybex = flagmaybey = flagmaybez = 1;
+@@ -782,36 +782,42 @@
+         if (flagmaybex) if (pos == 7) ++*hops;
+         if (pos < 2) if (ch != "\r\n"[pos]) flagmaybey = 0;
+         if (flagmaybey) if (pos == 1) flaginheader = 0;
++	/* NEWLINE: Header may end on \n now, too. */
++        if (pos == 0) if (ch == '\n') flaginheader = 0;
+ 	++pos;
+       }
+       if (ch == '\n') { pos = 0; flagmaybex = flagmaybey = flagmaybez = 1; }
+     }
+     switch(state) {
++      /* NEWLINE: New state machine to allow both \n and \r\n */
+       case 0:
+-        if (ch == '\n') straynewline();
+-        if (ch == '\r') { state = 4; continue; }
++        if (ch == '\n') state = 2;
++        if (ch == '\r') { state = 1; continue; }
+         break;
+-      case 1: /* \r\n */
+-        if (ch == '\n') straynewline();
+-        if (ch == '.') { state = 2; continue; }
+-        if (ch == '\r') { state = 4; continue; }
++     case 1: /* \r */
++        if (ch == '\n') { state = 2; break; }
++        if (ch == '\r') break;
+         state = 0;
++	put ("\r");
+         break;
+-      case 2: /* \r\n + . */
+-        if (ch == '\n') straynewline();
+-        if (ch == '\r') { state = 3; continue; }
++      case 2: /* \n or \r\n */
++        if (ch == '.') { state = 3; continue; }
++        if (ch == '\r') { state = 1; continue; }
++        if (ch == '\n') break;
+         state = 0;
+         break;
+-      case 3: /* \r\n + .\r */
++      case 3: /* \n or \r\n   . */
+         if (ch == '\n') return;
+-        put(".");
+-        put("\r");
+         if (ch == '\r') { state = 4; continue; }
+         state = 0;
+         break;
+-      case 4: /* + \r */
+-        if (ch == '\n') { state = 1; break; }
+-        if (ch != '\r') { put("\r"); state = 0; }
++      case 4: /* \n or \r\n  . \r */
++        if (ch == '\n') return;
++        put (".");
++        put ("\r");
++        if (ch == '\r') { state = 1; continue; }
++        state = 0;
++        break;
+     }
+     put(&ch);
+   }
