@@ -348,29 +348,29 @@ install -m755 instcheck %{buildroot}%{qbin}
 install -m755 config-fast %{buildroot}%{qbin}
 
 #-------------------------------------------------------------------------------
-install qmail.dh_key %{buildroot}%{qbin}/dh_key
-install qmail.rc     %{buildroot}%{qdir}/rc
-install qmail.init   %{buildroot}%{_initpath}/qmail
+install %{_sourcedir}/qmail.dh_key  %{buildroot}%{qbin}/dh_key
+install %{_sourcedir}/qmail.rc      %{buildroot}%{qdir}/rc
+install %{_sourcedir}/qmail.init    %{buildroot}%{_initpath}/qmail
 
 # configure qmail /var/qmail/control/*
 #-------------------------------------------------------------------------------
 touch %{buildroot}%{qcon}/smtproutes
 touch %{buildroot}%{qcon}/policy
 
-install badmimetypes         %{buildroot}%{qcon}/badmimetypes
-install badloadertypes       %{buildroot}%{qcon}/badloadertypes
-install badmailfrom          %{buildroot}%{qcon}/badmailfrom
-install badmailto            %{buildroot}%{qcon}/badmailto
-install concurrencyincoming  %{buildroot}%{qcon}/concurrencyincoming
-install concurrencyremote    %{buildroot}%{qcon}/concurrencyremote
-install databytes            %{buildroot}%{qcon}/databytes
-install defaultdelivery      %{buildroot}%{qcon}/defaultdelivery
-install locals               %{buildroot}%{qcon}/locals
-install logcount             %{buildroot}%{qcon}/logcount
-install logsize              %{buildroot}%{qcon}/logsize
-install queuelifetime        %{buildroot}%{qcon}/queuelifetime
-install spfbehavior          %{buildroot}%{qcon}/spfbehavior
-install smtpgreeting         %{buildroot}%{qcon}/smtpgreeting
+install %{_sourcedir}/badmimetypes         %{buildroot}%{qcon}/.
+install %{_sourcedir}/badloadertypes       %{buildroot}%{qcon}/.
+install %{_sourcedir}/badmailfrom          %{buildroot}%{qcon}/.
+install %{_sourcedir}/badmailto            %{buildroot}%{qcon}/.
+install %{_sourcedir}/concurrencyincoming  %{buildroot}%{qcon}/.
+install %{_sourcedir}/concurrencyremote    %{buildroot}%{qcon}/.
+install %{_sourcedir}/databytes            %{buildroot}%{qcon}/.
+install %{_sourcedir}/defaultdelivery      %{buildroot}%{qcon}/.
+install %{_sourcedir}/locals               %{buildroot}%{qcon}/.
+install %{_sourcedir}/logcount             %{buildroot}%{qcon}/.
+install %{_sourcedir}/logsize              %{buildroot}%{qcon}/.
+install %{_sourcedir}/queuelifetime        %{buildroot}%{qcon}/.
+install %{_sourcedir}/spfbehavior          %{buildroot}%{qcon}/.
+install %{_sourcedir}/smtpgreeting         %{buildroot}%{qcon}/.
 
 pushd %{buildroot}%{qcon}
   touch defaultdomain me plusdomain rcpthosts defaulthost
@@ -404,12 +404,13 @@ mkdir -p %{buildroot}%{qsup}/send/log
 mkdir -p %{buildroot}%{qsup}/smtp/log
 mkdir -p %{buildroot}%{qsup}/submission/log
 
-install qmail.run.send            %{buildroot}%{qsup}/send/run
-install qmail.run.send.log        %{buildroot}%{qsup}/send/log/run
-install qmail.run.smtp            %{buildroot}%{qsup}/smtp/run
-install qmail.run.smtp.log        %{buildroot}%{qsup}/smtp/log/run
-install qmail.run.submission      %{buildroot}%{qsup}/submission/run
-install qmail.run.submission.log  %{buildroot}%{qsup}/submission/log/run
+install %{_sourcedir}/qmail.run.send         %{buildroot}%{qsup}/send/run
+install %{_sourcedir}/qmail.run.send.log     %{buildroot}%{qsup}/send/log/run
+install %{_sourcedir}/qmail.run.smtp         %{buildroot}%{qsup}/smtp/run
+install %{_sourcedir}/qmail.run.smtp.log     %{buildroot}%{qsup}/smtp/log/run
+install %{_sourcedir}/qmail.run.submission   %{buildroot}%{qsup}/submission/run
+install %{_sourcedir}/qmail.run.submission.log \
+        %{buildroot}%{qsup}/submission/log/run
 
 # TODO: this can be done w/out perl
 %ifarch x86_64
@@ -418,7 +419,8 @@ install qmail.run.submission.log  %{buildroot}%{qsup}/submission/log/run
    %{__perl} -pi -e "s|12000000|48000000|g" %{spath}/submission/run
 %endif
 
-install -Dp qmail.tcp.smtp %{buildroot}%{_sysconfdir}/tcprules.d/tcp.smtp
+install -Dp %{_sourcedir}/qmail.tcp.smtp \
+            %{buildroot}%{_sysconfdir}/tcprules.d/tcp.smtp
 
 # Make skel dirs
 #-------------------------------------------------------------------------------
@@ -427,7 +429,7 @@ echo "./Maildir/" > %{buildroot}%{_sysconfdir}/skel/.qmail
 
 find %{buildroot}%{qman} -type f -exec bzip2 -9f {} \;
 
-install makecert.sh %{buildroot}%{qbin}/makecert.sh
+install %{_sourcedir}/makecert.sh  %{buildroot}%{qbin}/.
 
 # this is a %ghost file, which is generated in %post
 touch %{buildroot}%{qcon}/servercert.pem
