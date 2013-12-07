@@ -1,27 +1,3 @@
-diff -Naur qmail-1.03-original/badloadertypes qmail-1.03/badloadertypes
---- qmail-1.03-original/badloadertypes	1969-12-31 19:00:00.000000000 -0500
-+++ qmail-1.03/badloadertypes	2011-01-23 10:39:17.000000000 -0500
-@@ -0,0 +1,4 @@
-+Mi5kb
-+MzIuZ
-+MyLmR
-+MyLkR
-diff -Naur qmail-1.03-original/badmimetypes qmail-1.03/badmimetypes
---- qmail-1.03-original/badmimetypes	1969-12-31 19:00:00.000000000 -0500
-+++ qmail-1.03/badmimetypes	2011-01-23 10:39:17.000000000 -0500
-@@ -0,0 +1,12 @@
-+TVqQAAMAA
-+TVpQAAIAA
-+TVpAALQAc
-+TVpyAXkAX
-+TVrmAU4AA
-+TVrhARwAk
-+TVoFAQUAA
-+TVoAAAQAA
-+TVoIARMAA
-+TVouARsAA
-+TVrQAT8AA
-+TVoAAAEAA
 diff -Naur qmail-1.03-original/base64.c qmail-1.03/base64.c
 --- qmail-1.03-original/base64.c	1969-12-31 19:00:00.000000000 -0500
 +++ qmail-1.03/base64.c	2011-01-23 10:39:17.000000000 -0500
@@ -11680,7 +11656,6 @@ diff -Naur qmail-1.03-original/README.domainkeys qmail-1.03/README.domainkeys
 +
 +Your /etc/tcprules.d/tcp.smtp file should look like this (without the "\"s):
 +
-+  127.:allow,RELAYCLIENT=""
 +  :allow,BADMIMETYPE="",BADLOADERTYPE="M",CHKUSER_RCPTLIMIT="50",\
 +  CHKUSER_WRONGRCPTLIMIT="10",DKVERIFY="DEGIJKfh",QMAILQUEUE="/var/qmail/bin/simscan",\
 +  DKQUEUE="/var/qmail/bin/qmail-queue.orig"

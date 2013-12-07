@@ -1,2 +1,1 @@
-127.:allow,RELAYCLIENT="",DKSIGN="/var/qmail/control/domainkeys/%/private"
-:allow,BADMIMETYPE="",BADLOADERTYPE="M",CHKUSER_RCPTLIMIT="50",CHKUSER_WRONGRCPTLIMIT="10",DKSIGN="/var/qmail/control/domainkeys/%/private"
+:allow,BADMIMETYPE="",BADLOADERTYPE="M",CHKUSER_RCPTLIMIT="50",CHKUSER_WRONGRCPTLIMIT="10",NOP0FCHECK="1",QMAILQUEUE="/var/qmail/bin/simscan",DKQUEUE="/var/qmail/bin/qmail-queue.orig",DKVERIFY="DEGIJKfh",DKSIGN="/var/qmail/control/domainkeys/%/private"
