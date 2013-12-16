@@ -11612,7 +11612,7 @@ diff -Naur qmail-1.03-original/README.auth qmail-1.03/README.auth
 diff -Naur qmail-1.03-original/README.domainkeys qmail-1.03/README.domainkeys
 --- qmail-1.03-original/README.domainkeys	1969-12-31 19:00:00.000000000 -0500
 +++ qmail-1.03/README.domainkeys	2011-01-23 10:39:17.000000000 -0500
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,56 @@
 +qmail-dk domainkeys implementation into qmailtoaster
 +----------------------------------------------------
 +Nick Hemmesch <nick@ndhsoft.com>        May 13, 2006
