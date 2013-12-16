@@ -56,14 +56,14 @@ Patch8:         qmail-empf.patch
 Patch9:		qmail-vpopmail-devel.patch
 Patch10:	qmail-uids.patch
 BuildRequires:	krb5-devel >= 1.5
-BuildRequires:	libdomainkeys-devel
-BuildRequires:	libsrs2-devel
+BuildRequires:	libdomainkeys-static
+BuildRequires:	libsrs2-static
+BuildRequires:	libvpopmail-static
 BuildRequires:	openssl-devel >= 0.9.8
-BuildRequires:	vpopmail-devel
 Requires:	openssl >= 0.9.8
 Requires:	sh-utils
-Requires:       daemontools-toaster
-Requires:	ucspi-tcp-toaster
+Requires:       daemontools
+Requires:	ucspi-tcp
 Requires:	vpopmail
 Requires:	spamdyke
 Provides:	smtpdaemon
