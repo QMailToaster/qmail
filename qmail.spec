@@ -1,16 +1,3 @@
-%define ccflags       %{optflags} -DTLS=20060104 -I/usr/include/vpopmail
-%define crontab       %{_sysconfdir}/crontab
-%define _initpath     %{_sysconfdir}/rc.d/init.d
-%define debug_package %{nil}
-%define qdir          /var/%{name}
-%define qbin          %{qdir}/bin
-%define qcon          %{qdir}/control
-%define qdoc          %{qdir}/doc
-%define qman          %{qdir}/man
-%define qque          %{qdir}/queue
-%define qsup          %{qdir}/supervise
-%define qlog          /var/log/%{name}
-
 Name:		qmail
 Summary:	qmail Mail Transfer Agent
 Version:	1.03
@@ -68,9 +55,23 @@ Requires:	vpopmail
 Requires:	spamdyke
 Provides:	smtpdaemon
 Provides:	MTA
+Obsoletes:	qmail-toaster
 Obsoletes:	qmail-toaster-doc
 Conflicts:	sendmail, exim, smail, postfix, qmail
 BuildRoot:      %{_topdir}/BUILDROOT/%{name}-%{version}-%{release}.%{_arch}
+
+%define ccflags       %{optflags} -DTLS=20060104 -I/usr/include/libvpopmail
+%define crontab       %{_sysconfdir}/crontab
+%define _initpath     %{_sysconfdir}/rc.d/init.d
+%define debug_package %{nil}
+%define qdir          /var/%{name}
+%define qbin          %{qdir}/bin
+%define qcon          %{qdir}/control
+%define qdoc          %{qdir}/doc
+%define qman          %{qdir}/man
+%define qque          %{qdir}/queue
+%define qsup          %{qdir}/supervise
+%define qlog          /var/log/%{name}
 
 #-------------------------------------------------------------------------------
 %description
