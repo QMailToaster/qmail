@@ -6,7 +6,7 @@
 -VPOPMAIL_HOME=/home/vpopmail
  SMTPD_CHKUSER_OBJ=chkuser.o
 -VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
-+VPOPMAIL_LIBS=`head -1 /etc/vpopmail/lib_deps`
++VPOPMAIL_LIBS=`head -1 /etc/libvpopmail/lib_deps`
 -LIB_DK=LDK_PATH
 +LIB_DK=/usr/lib/libdomainkeys.a
  
