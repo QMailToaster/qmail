@@ -276,7 +276,7 @@ for i in BIN.README BLURB BLURB2 BLURB3 BLURB4 CHANGES CHKUSER.changelog \
          REMOVE.binmail REMOVE.sendmail SECURITY SYSDEPS THANKS THOUGHTS \
          TODO UPGRADE VERSION ChangeLog.empf README.empf
 do
-  install -m644 ${_builddir}/%{name}-%{version}/$i %{buildroot}%{qdoc}
+  install -m644 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qdoc}
 done
 
 for i in qreceipt condredirect mailsubj except maildirmake preline tcp-env \
