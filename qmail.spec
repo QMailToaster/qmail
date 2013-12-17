@@ -235,23 +235,23 @@ for i in bouncesaying condredirect datemail elq except forward instcheck \
          maildir2mbox maildirmake maildirwatch mailsubj \
          pinq predate preline qail qbiff
 do
-  install -m755 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qbin}
+  install -m755 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qbin}
 done
 
 for i in qmail-clean qmail-getpw qmail-local qmail-pw2u \
          qmail-remote qmail-rspawn qmail-send splogger
 do
-  install -m711 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qbin}
+  install -m711 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qbin}
 done
 
 for i in qmail-lspawn qmail-newmrh qmail-newu qmail-start
 do
-  install -m700 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qbin}
+  install -m700 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qbin}
 done
 
 for i in qmail-dk qmail-queue
 do
-  install -m4711 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qbin}
+  install -m4711 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qbin}
 done
 
 for i in qmail-badmimetypes qmail-badloadertypes qmail-inject \
@@ -259,9 +259,8 @@ for i in qmail-badmimetypes qmail-badloadertypes qmail-inject \
          qmail-showctl qmail-smtpd qmail-tcpok qmail-tcpto qreceipt \
          qsmhook sendmail spfquery tcp-env srsfilter
 do
-  install -m755 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qbin}
+  install -m755 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qbin}
 done
-
 
 # install docs
 #-------------------------------------------------------------------------------
@@ -277,27 +276,27 @@ for i in BIN.README BLURB BLURB2 BLURB3 BLURB4 CHANGES CHKUSER.changelog \
          REMOVE.binmail REMOVE.sendmail SECURITY SYSDEPS THANKS THOUGHTS \
          TODO UPGRADE VERSION ChangeLog.empf README.empf
 do
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qdoc}
+  install -m644 ${_builddir}/%{name}-%{version}/$i %{buildroot}%{qdoc}
 done
 
 for i in qreceipt condredirect mailsubj except maildirmake preline tcp-env \
          bouncesaying maildir2mbox qbiff forward maildirwatch
 do
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.1 %{buildroot}%{qman}/man1
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat1
+  install -m644 %{_builddir}/%{name}-%{version}/$i.1 %{buildroot}%{qman}/man1
+  install -m644 %{_builddir}/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat1
 done
 
 for i in qmail-users maildir qmail-header envelopes mbox tcp-environ \
          qmail-control qmail-log addresses dot-qmail
 do
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.5 %{buildroot}%{qman}/man5
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat5
+  install -m644 %{_builddir}/%{name}-%{version}/$i.5 %{buildroot}%{qman}/man5
+  install -m644 %{_builddir}/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat5
 done
 
 for i in qmail-limits forgeries qmail
 do
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.7 %{buildroot}%{qman}/man7
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat7
+  install -m644 %{_builddir}/%{name}-%{version}/$i.7 %{buildroot}%{qman}/man7
+  install -m644 %{_builddir}/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat7
 done
 
 for i in qmail-badmimetypes qmail-badloadertypes qmail-tcpto qmail-qread \
@@ -307,18 +306,18 @@ for i in qmail-badmimetypes qmail-badloadertypes qmail-tcpto qmail-qread \
          qmail-qmtpd qmail-queue qmail-lspawn qmail-newmrh \
          qmail-local qmail-send qmail-remote
 do
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.8 %{buildroot}%{qman}/man8
-  install -m644 $RPM_BUILD_DIR/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat8
+  install -m644 %{_builddir}/%{name}-%{version}/$i.8 %{buildroot}%{qman}/man8
+  install -m644 %{_builddir}/%{name}-%{version}/$i.0 %{buildroot}%{qman}/cat8
 done
 
-install -m644 $RPM_BUILD_DIR/%{name}-%{version}/qmail-dk.8 %{buildroot}%{qman}/man8
+install %{_builddir}/%{name}-%{version}/qmail-dk.8 %{buildroot}%{qman}/man8
 
 # install boot
 #-------------------------------------------------------------------------------
 for i in home home+df binm1 binm2+df proc+df \
          binm2 binm3 proc binm3+df binm1+df
 do
-  install -m755 $RPM_BUILD_DIR/%{name}-%{version}/$i %{buildroot}%{qdir}/boot
+  install -m755 %{_builddir}/%{name}-%{version}/$i %{buildroot}%{qdir}/boot
 done
 
 # build the queue
@@ -345,36 +344,41 @@ touch %{buildroot}%{qque}/lock/tcpto
 #mkfifo -m 0622 %{buildroot}%{qque}/lock/trigger
 touch %{buildroot}%{qque}/lock/trigger
 
-install -m755 instcheck %{buildroot}%{qbin}
+install -m755 instcheck   %{buildroot}%{qbin}
 install -m755 config-fast %{buildroot}%{qbin}
 
 #-------------------------------------------------------------------------------
-install %{_sourcedir}/qmail.dh_key  %{buildroot}%{qbin}/dh_key
-install %{_sourcedir}/qmail.rc      %{buildroot}%{qdir}/rc
-install %{_sourcedir}/qmail.init    %{buildroot}%{_initpath}/qmail
+install %{SOURCE1}  %{buildroot}%{qbin}/dh_key
+install %{SOURCE2}  %{buildroot}%{qdir}/rc
+install %{SOURCE3}  %{buildroot}%{_initpath}/qmail
 
 # configure qmail /var/qmail/control/*
 #-------------------------------------------------------------------------------
-touch %{buildroot}%{qcon}/smtproutes
-touch %{buildroot}%{qcon}/policy
 
-install %{_sourcedir}/badmimetypes         %{buildroot}%{qcon}/.
-install %{_sourcedir}/badloadertypes       %{buildroot}%{qcon}/.
-install %{_sourcedir}/badmailfrom          %{buildroot}%{qcon}/.
-install %{_sourcedir}/badmailto            %{buildroot}%{qcon}/.
-install %{_sourcedir}/concurrencyincoming  %{buildroot}%{qcon}/.
-install %{_sourcedir}/concurrencyremote    %{buildroot}%{qcon}/.
-install %{_sourcedir}/databytes            %{buildroot}%{qcon}/.
-install %{_sourcedir}/defaultdelivery      %{buildroot}%{qcon}/.
-install %{_sourcedir}/locals               %{buildroot}%{qcon}/.
-install %{_sourcedir}/logcount             %{buildroot}%{qcon}/.
-install %{_sourcedir}/logsize              %{buildroot}%{qcon}/.
-install %{_sourcedir}/queuelifetime        %{buildroot}%{qcon}/.
-install %{_sourcedir}/spfbehavior          %{buildroot}%{qcon}/.
-install %{_sourcedir}/smtpgreeting         %{buildroot}%{qcon}/.
+install %{SOURCE4}  \
+        %{SOURCE5}  \
+        %{SOURCE6}  \
+        %{SOURCE7}  \
+        %{SOURCE8}  \
+        %{SOURCE9}  \
+        %{SOURCE10} \
+        %{SOURCE11} \
+        %{SOURCE12} \
+        %{SOURCE13} \
+        %{SOURCE14} \
+        %{SOURCE15} \
+        %{SOURCE16} \
+        %{SOURCE17} \
+      %{buildroot}%{qcon}
 
 pushd %{buildroot}%{qcon}
-  touch defaultdomain me plusdomain rcpthosts defaulthost
+  touch defaultdomain \
+        defaulthost \
+        me \
+        plusdomain \
+        policy \
+        rcpthosts \
+        smtproutes
 popd
 
 # Make users dir and files
@@ -405,13 +409,12 @@ mkdir -p %{buildroot}%{qsup}/send/log
 mkdir -p %{buildroot}%{qsup}/smtp/log
 mkdir -p %{buildroot}%{qsup}/submission/log
 
-install %{_sourcedir}/qmail.run.send         %{buildroot}%{qsup}/send/run
-install %{_sourcedir}/qmail.run.send.log     %{buildroot}%{qsup}/send/log/run
-install %{_sourcedir}/qmail.run.smtp         %{buildroot}%{qsup}/smtp/run
-install %{_sourcedir}/qmail.run.smtp.log     %{buildroot}%{qsup}/smtp/log/run
-install %{_sourcedir}/qmail.run.submission   %{buildroot}%{qsup}/submission/run
-install %{_sourcedir}/qmail.run.submission.log \
-        %{buildroot}%{qsup}/submission/log/run
+install %{SOURCE18}  %{buildroot}%{qsup}/send/run
+install %{SOURCE19}  %{buildroot}%{qsup}/send/log/run
+install %{SOURCE20}  %{buildroot}%{qsup}/smtp/run
+install %{SOURCE21}  %{buildroot}%{qsup}/smtp/log/run
+install %{SOURCE22}  %{buildroot}%{qsup}/submission/run
+install %{SOURCE23}  %{buildroot}%{qsup}/submission/log/run
 
 # TODO: this can be done w/out perl
 %ifarch x86_64
@@ -420,8 +423,7 @@ install %{_sourcedir}/qmail.run.submission.log \
    %{__perl} -pi -e "s|12000000|48000000|g" %{spath}/submission/run
 %endif
 
-install -Dp %{_sourcedir}/qmail.tcp.smtp \
-            %{buildroot}%{_sysconfdir}/tcprules.d/tcp.smtp
+install -Dp %{SOURCE24} %{buildroot}%{_sysconfdir}/tcprules.d/tcp.smtp
 
 # Make skel dirs
 #-------------------------------------------------------------------------------
@@ -430,7 +432,7 @@ echo "./Maildir/" > %{buildroot}%{_sysconfdir}/skel/.qmail
 
 find %{buildroot}%{qman} -type f -exec bzip2 -9f {} \;
 
-install %{_sourcedir}/makecert.sh  %{buildroot}%{qbin}/.
+install %{SOURCE25}  %{buildroot}%{qbin}/.
 
 # this is a %ghost file, which is generated in %post
 touch %{buildroot}%{qcon}/servercert.pem
