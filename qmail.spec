@@ -53,8 +53,9 @@ Requires:       daemontools
 Requires:	ucspi-tcp
 Requires:	vpopmail
 Requires:	spamdyke
-Provides:	smtpdaemon
 Provides:	MTA
+Provides:	smtpdaemon
+Provides:	sendmail
 Obsoletes:	qmail-toaster
 Obsoletes:	qmail-toaster-doc
 Conflicts:	sendmail, exim, smail, postfix, qmail
