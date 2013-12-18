@@ -56,9 +56,10 @@ Requires:	spamdyke
 Provides:	MTA
 Provides:	smtpdaemon
 Provides:	sendmail
+Obsoletes:	exim
+Obsoletes:	postfix
 Obsoletes:	qmail-toaster
 Obsoletes:	qmail-toaster-doc
-Conflicts:	sendmail, exim, smail, postfix, qmail
 BuildRoot:      %{_topdir}/BUILDROOT/%{name}-%{version}-%{release}.%{_arch}
 
 %define ccflags       %{optflags} -DTLS=20060104 -I/usr/include/libvpopmail
