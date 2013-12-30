@@ -47,12 +47,12 @@ BuildRequires:	libdomainkeys-static
 BuildRequires:	libsrs2-static
 BuildRequires:	libvpopmail-static
 BuildRequires:	openssl-devel >= 0.9.8
+Requires:       daemontools
 Requires:	openssl >= 0.9.8
 Requires:	sh-utils
-Requires:       daemontools
+Requires:	spamdyke
 Requires:	ucspi-tcp
 Requires:	vpopmail
-Requires:	spamdyke
 Provides:	MTA
 Provides:	smtpdaemon
 Provides:	sendmail
@@ -422,7 +422,7 @@ install %{SOURCE23}  %{buildroot}%{qsup}/submission/log/run
 %ifarch x86_64
    %define spath %{buildroot}%{qsup}
    %{__perl} -pi -e "s|20000000|64000000|g" %{spath}/smtp/run
-   %{__perl} -pi -e "s|12000000|48000000|g" %{spath}/submission/run
+   %{__perl} -pi -e "s|12000000|50000000|g" %{spath}/submission/run
 %endif
 
 install -Dp %{SOURCE24} %{buildroot}%{_sysconfdir}/tcprules.d/tcp.smtp
