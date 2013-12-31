@@ -105,7 +105,7 @@ Robert Sander - qmail-remote-auth
 http://www.ornl.gov/lists/mailing-lists/qmail/2002/03/msg00091.html
 
 Antonio Nati - chkuser-2.0.9
-http://www.interazioni.it/opensource/chkuser/
+http://opensource.interazioni.it/qmail/chkuser.html
 
 Chris christophe@saout.de - qmail-spf.rc5 
 http://www.saout.de/misc/spf/
