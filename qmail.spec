@@ -1,66 +1,68 @@
-Name:		qmail
-Summary:	qmail Mail Transfer Agent
-Version:	1.03
-Release:	0%{?dist}
-License:	Public Domain / GNU
-Group:		System/Servers
-URL:		http://www.qmail.org/
-Source:		http://cr.yp.to/software/%{name}-%{version}.tar.gz
-Source1:	qmail.dh_key
-Source2:	qmail.rc
-Source3:	qmail.init
-Source4:	badmimetypes
-Source5:	badloadertypes
-Source6:	badmailfrom
-Source7:	badmailto
-Source8:	concurrencyincoming
-Source9:	concurrencyremote
-Source10:	databytes
-Source11:	defaultdelivery
-Source12:	locals
-Source13:	logcount
-Source14:	logsize
-Source15:	queuelifetime
-Source16:	spfbehavior
-Source17:	smtpgreeting
-Source18:	qmail.run.send
-Source19:	qmail.run.send.log
-Source20:	qmail.run.smtp
-Source21:	qmail.run.smtp.log
-Source22:	qmail.run.submission
-Source23:	qmail.run.submission.log
-Source24:	qmail.tcp.smtp
-Source25:	makecert.sh
-Patch0:		qmailtoaster-1.3.2.patch
-Patch1:		qmailtoaster-chkuser.patch
-Patch2:		qmail-require_auth.patch
-Patch3:		qmail-dk-0.6.beta.2.patch
-Patch4:		qmail-smtpd-spf-qq-reject-logging.patch
-Patch5:		qmail-srs-qt-0.5.patch
-Patch6:		qmailtoaster-big-dns.patch
-Patch7:		qmail-smtpd-linefeed.patch
-Patch8:         qmail-empf.patch
-Patch9:		qmail-vpopmail-devel.patch
-Patch10:	qmail-uids.patch
-BuildRequires:	krb5-devel >= 1.5
-BuildRequires:	libdomainkeys-static
-BuildRequires:	libsrs2-static
-BuildRequires:	libvpopmail-static
-BuildRequires:	openssl-devel >= 0.9.8
-Requires:       daemontools
-Requires:	openssl >= 0.9.8
-Requires:	sh-utils
-Requires:	spamdyke
-Requires:	ucspi-tcp
-Requires:	vpopmail
-Provides:	MTA
-Provides:	smtpdaemon
-Provides:	sendmail
-Obsoletes:	exim
-Obsoletes:	postfix
-Obsoletes:	qmail-toaster
-Obsoletes:	qmail-toaster-doc
-BuildRoot:      %{_topdir}/BUILDROOT/%{name}-%{version}-%{release}.%{_arch}
+Name:      qmail
+Summary:   qmail Mail Transfer Agent
+Version:   1.03
+Release:   0%{?dist}
+License:   Public Domain / GNU
+Group:     System/Servers
+URL:       http://www.qmail.org/
+Vendor:    QmailToaster
+Packager:  Eric Shubert <qmt-build@datamatters.us>
+Source:    http://cr.yp.to/software/%{name}-%{version}.tar.gz
+Source1:   qmail.dh_key
+Source2:   qmail.rc
+Source3:   qmail.init
+Source4:   badmimetypes
+Source5:   badloadertypes
+Source6:   badmailfrom
+Source7:   badmailto
+Source8:   concurrencyincoming
+Source9:   concurrencyremote
+Source10:  databytes
+Source11:  defaultdelivery
+Source12:  locals
+Source13:  logcount
+Source14:  logsize
+Source15:  queuelifetime
+Source16:  spfbehavior
+Source17:  smtpgreeting
+Source18:  qmail.run.send
+Source19:  qmail.run.send.log
+Source20:  qmail.run.smtp
+Source21:  qmail.run.smtp.log
+Source22:  qmail.run.submission
+Source23:  qmail.run.submission.log
+Source24:  qmail.tcp.smtp
+Source25:  makecert.sh
+Patch0:    qmailtoaster-1.3.2.patch
+Patch1:    qmailtoaster-chkuser.patch
+Patch2:    qmail-require_auth.patch
+Patch3:    qmail-dk-0.6.beta.2.patch
+Patch4:    qmail-smtpd-spf-qq-reject-logging.patch
+Patch5:    qmail-srs-qt-0.5.patch
+Patch6:    qmailtoaster-big-dns.patch
+Patch7:    qmail-smtpd-linefeed.patch
+Patch8:    qmail-empf.patch
+Patch9:    qmail-vpopmail-devel.patch
+Patch10:   qmail-uids.patch
+BuildRequires: krb5-devel >= 1.5
+BuildRequires: libdomainkeys-static
+BuildRequires: libsrs2-static
+BuildRequires: libvpopmail-static
+BuildRequires: openssl-devel >= 0.9.8
+Requires:  daemontools
+Requires:  openssl >= 0.9.8
+Requires:  sh-utils
+Requires:  spamdyke
+Requires:  ucspi-tcp
+Requires:  vpopmail
+Provides:  MTA
+Provides:  smtpdaemon
+Provides:  sendmail
+Obsoletes: exim
+Obsoletes: postfix
+Obsoletes: qmail-toaster
+Obsoletes: qmail-toaster-doc
+BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}-%{release}.%{_arch}
 
 %define ccflags       %{optflags} -DTLS=20060104 -I/usr/include/libvpopmail
 %define crontab       %{_sysconfdir}/crontab
