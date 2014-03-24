@@ -10926,7 +10926,7 @@ diff -Naur qmail-1.03-original/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
    blast(&hops);
    hops = (hops >= MAXHOPS);
    if (hops) qmail_fail(&qqt);
-@@ -388,28 +842,506 @@
+@@ -388,28 +842,507 @@
    qqx = qmail_close(&qqt);
    if (!*qqx) { acceptmessage(qp); return; }
    if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
@@ -11378,6 +11378,7 @@ diff -Naur qmail-1.03-original/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
 +  SSL_set_cipher_list(myssl, ciphers);
 +  alloc_free(saciphers.s);
 +
++  SSL_set_options(myssl, SSL_OP_NO_SSLv2);
 +  SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
 +  SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
 +  SSL_set_rfd(myssl, ssl_rfd = substdio_fileno(&ssin));
