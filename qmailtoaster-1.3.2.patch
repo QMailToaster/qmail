@@ -9391,7 +9391,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
    zerodie();
  }
  
-@@ -214,26 +346,297 @@
+@@ -214,26 +346,298 @@
    substdio_flush(&smtpto);
  }
  
@@ -9507,6 +9507,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
 +  alloc_free(saciphers.s);
 +
 +  /* SSL_set_options(myssl, SSL_OP_NO_TLSv1); */
++  SSL_set_options(myssl, SSL_OP_NO_SSLv2);
 +  SSL_set_fd(myssl, smtpfd);
 +
 +  /* read the responce to STARTTLS */
@@ -9720,7 +9721,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
        flagbother = 1;
      }
    }
-@@ -331,7 +741,7 @@
+@@ -331,7 +742,7 @@
  char **argv;
  {
    static ipalloc ip = {0};
@@ -9729,7 +9730,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
    unsigned long random;
    char **recips;
    unsigned long prefme;
-@@ -347,6 +757,9 @@
+@@ -347,6 +758,9 @@
   
    if (!stralloc_copys(&host,argv[1])) temp_nomem();
   
@@ -9739,7 +9740,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
    relayhost = 0;
    for (i = 0;i <= host.len;++i)
      if ((i == 0) || (i == host.len) || (host.s[i] == '.'))
-@@ -355,6 +768,16 @@
+@@ -355,6 +769,16 @@
    if (relayhost && !*relayhost) relayhost = 0;
   
    if (relayhost) {
@@ -9756,7 +9757,7 @@ diff -Naur qmail-1.03-original/qmail-remote.c qmail-1.03/qmail-remote.c
      i = str_chr(relayhost,':');
      if (relayhost[i]) {
        scan_ulong(relayhost + i + 1,&port);
-@@ -417,6 +840,9 @@
+@@ -417,6 +841,9 @@
      if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
        tcpto_err(&ip.ix[i].ip,0);
        partner = ip.ix[i].ip;
