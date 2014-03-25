@@ -601,7 +601,7 @@ echo " Compiling badloadertypes."
 touch  %{qcon}/tlsserverciphers
 rm -fr %{qcon}/tlsclientciphers 2>&1 > /dev/null
 echo " Making tlsserverciphers."
-./%{_bindir}/openssl ciphers -ssl3 -tls1 "HIGH:MEDIUM" \
+./%{_bindir}/openssl ciphers 'MEDIUM:HIGH:!SSLv2:!MD5:!RC4:!3DES' \
                > %{qcon}/tlsserverciphers
 chown root:qmail %{qcon}/tlsserverciphers
 chmod 644        %{qcon}/tlsserverciphers
