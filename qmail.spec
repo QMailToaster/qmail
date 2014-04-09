@@ -544,7 +544,7 @@ echo $defaultDomain    > %{qcon}/defaulthost
 echo $defaultDomain    > %{qcon}/plusdomain
 echo $defaultHostname >> %{qcon}/rcpthosts
 echo $defaultHostname >> %{qcon}/locals
-echo "$defaultHostname - Welcome to Qmail Toaster Ver. %{bversion} SMTP Server"                        > %{qcon}/smtpgreeting
+echo "$defaultHostname - Welcome to Qmail Toaster Ver. %{version}-%{release} SMTP Server"              > %{qcon}/smtpgreeting
 
 # Make postmaster the default address for aliases
 #-------------------------------------------------------------------------------
