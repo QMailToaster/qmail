@@ -58,13 +58,13 @@ pushd $tempdir > /dev/null
     echo "${T_MD}Generating custom Certificate Authority (CA)${T_ME}"
     echo "______________________________________________________________________"
     echo ""
-    echo "${T_MD}STEP 1: Generating RSA private key for CA (1024 bit)${T_ME}"
+    echo "${T_MD}STEP 1: Generating RSA private key for CA (2048 bit)${T_ME}"
     cp /dev/null ca.rnd
     echo '01' >ca.ser
     if [ ".$randfiles" != . ]; then
-        $openssl genrsa -rand $randfiles -out ca.key 1024
+        $openssl genrsa -rand $randfiles -out ca.key 2048
     else
-        $openssl genrsa -out ca.key 1024
+        $openssl genrsa -out ca.key 2048
     fi
     if [ $? -ne 0 ]; then
         echo "cca:Error: Failed to generate RSA private key" 1>&2
@@ -75,7 +75,7 @@ pushd $tempdir > /dev/null
     echo "${T_MD}STEP 2: Generating X.509 certificate signing request for CA${T_ME}"
     cat >.cfg <<EOT
 [ req ]
-default_bits                    = 1024
+default_bits                    = 2048
 distinguished_name              = req_DN
 RANDFILE                        = ca.rnd
 [ req_DN ]
@@ -137,11 +137,11 @@ EOT
     echo "${T_MD}Generating custom USER${T_ME} [$user]"
     echo "______________________________________________________________________"
     echo ""
-    echo "${T_MD}STEP 5: Generating RSA private key for USER (1024 bit)${T_ME}"
+    echo "${T_MD}STEP 5: Generating RSA private key for USER (2048 bit)${T_ME}"
     if [ ".$randfiles" != . ]; then
-        $openssl genrsa -rand $randfiles -out $user.key 1024
+        $openssl genrsa -rand $randfiles -out $user.key 2048
     else
-        $openssl genrsa -out $user.key 1024
+        $openssl genrsa -out $user.key 2048
     fi
     if [ $? -ne 0 ]; then
         echo "cca:Error: Failed to generate RSA private key" 1>&2
@@ -152,7 +152,7 @@ EOT
     echo "${T_MD}STEP 6: Generating X.509 certificate signing request for USER${T_ME}"
     cat >.cfg <<EOT
 [ req ]
-default_bits                    = 1024
+default_bits                    = 2048
 distinguished_name              = req_DN
 RANDFILE                        = ca.rnd
 [ req_DN ]
