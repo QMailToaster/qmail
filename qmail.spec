@@ -1,7 +1,7 @@
 Name:      qmail
 Summary:   qmail Mail Transfer Agent
 Version:   1.03
-Release:   0%{?dist}
+Release:   1%{?dist}
 License:   Public Domain / GNU
 Group:     System/Servers
 URL:       http://www.qmail.org/
@@ -25,8 +25,8 @@ Source14:  logsize
 Source15:  queuelifetime
 Source16:  spfbehavior
 Source17:  smtpgreeting
-Source18:  qmail.run.send
-Source19:  qmail.run.send.log
+#Source18:  qmail.run.send
+#Source19:  qmail.run.send.log
 Source20:  qmail.run.smtp
 Source21:  qmail.run.smtp.log
 Source22:  qmail.run.submission
@@ -44,6 +44,8 @@ Patch7:    qmail-smtpd-linefeed.patch
 Patch8:    qmail-empf.patch
 Patch9:    qmail-vpopmail-devel.patch
 Patch10:   qmail-uids.patch
+Patch11:   qmail-nocram.patch
+Patch12:   splogger-nostamp.patch
 BuildRequires: krb5-devel >= 1.5
 BuildRequires: libdomainkeys-static
 BuildRequires: libsrs2-static
@@ -164,11 +166,8 @@ http://www.inter7.com/?page=empf-install
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
-
-# Remove CRAM-MD5 because qmail-remote-auth doesn't like it
-# TODO: make this a patch
-#-------------------------------------------------------------------------------
-%{__perl} -pi -e "s|\#define AUTHCRAM||g" qmail-smtpd.c
+%patch11 -p1
+%patch12 -p1
 
 #-------------------------------------------------------------------------------
 %build
@@ -217,7 +216,8 @@ done
 #-------------------------------------------------------------------------------
 install -d -m700 %{buildroot}%{qsup}
 
-for i in send smtp submission; do
+#for i in send smtp submission; do
+for i in smtp submission; do
   install -d -m1751 %{buildroot}%{qsup}/$i
   install -d -m751  %{buildroot}%{qsup}/$i/log
   install -d -m751  %{buildroot}%{qsup}/$i/supervise
@@ -228,7 +228,7 @@ install -d -m750  %{buildroot}%{qque}
 install -d -m2755 %{buildroot}%{qdir}/alias
 
 install -d -m755  %{buildroot}%{qlog}
-install -d -m755  %{buildroot}%{qlog}/send
+#install -d -m755  %{buildroot}%{qlog}/send
 install -d -m755  %{buildroot}%{qlog}/smtp
 install -d -m755  %{buildroot}%{qlog}/submission
 
@@ -409,12 +409,12 @@ popd
 
 # Install supervise
 #-------------------------------------------------------------------------------
-mkdir -p %{buildroot}%{qsup}/send/log
+#mkdir -p %{buildroot}%{qsup}/send/log
 mkdir -p %{buildroot}%{qsup}/smtp/log
 mkdir -p %{buildroot}%{qsup}/submission/log
 
-install %{SOURCE18}  %{buildroot}%{qsup}/send/run
-install %{SOURCE19}  %{buildroot}%{qsup}/send/log/run
+#install %{SOURCE18}  %{buildroot}%{qsup}/send/run
+#install %{SOURCE19}  %{buildroot}%{qsup}/send/log/run
 install %{SOURCE20}  %{buildroot}%{qsup}/smtp/run
 install %{SOURCE21}  %{buildroot}%{qsup}/smtp/log/run
 install %{SOURCE22}  %{buildroot}%{qsup}/submission/run
@@ -525,6 +525,14 @@ fi
 #-------------------------------------------------------------------------------
 %post
 #-------------------------------------------------------------------------------
+
+# stop qmail send and move supervise scripts if present
+#oldsenddir=/var/qmail/supervise/send
+#if [ ! -z "$(which svc 2>/dev/null)" ] \
+#      && [ -d "$oldsenddir" ]; then
+#  svc -d $oldsenddir
+#  mv $oldsenddir /root/send.supervise
+#fi
 
 mv -f %{qbin}/qmail-queue %{qbin}/qmail-queue.orig
 ln -s %{qbin}/qmail-dk %{qbin}/qmail-queue
@@ -884,6 +892,11 @@ fi
 #-------------------------------------------------------------------------------
 %changelog
 #-------------------------------------------------------------------------------
+* Tue Jul 29 2014 Eric Shubert <eric@datamatters.us> 1.03-1.qt
+- Patched splogger to remove superfluous timestamp
+- Modified rc file to use splogger for qmail-send log messages
+- qmail-send log messages now go to /var/log/maillog
+- removed CRAM_MD5 authentication method
 * Sun Oct 20 2013 Eric Shubert <eric@datamatters.us> 1.03-0.qt
 - Migrated to github
 - Removed -toaster designation
